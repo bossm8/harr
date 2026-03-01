@@ -225,6 +225,17 @@ All API calls go through HA's HTTP server, so:
 
 ---
 
+## Preview
+
+![Discover](./assets/discover.png)
+![Calenar](./assets/calendar.png)
+![Detail](./assets/detail.png)
+![Requests](./assets/requests.png)
+![Downloads](./assets/downloads.png)
+![Mobile](./assets/mobile.png)
+
+---
+
 ## Development
 
 This repo has also a devcontainer docker-compose stack with the following basic services:
