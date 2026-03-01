@@ -10,7 +10,7 @@ A Home Assistant custom integration that brings [nzb360](https://nzb360.com/)-st
 | --- | --- |
 | [Radarr](https://radarr.video/) | Browse movie library, search & add movies, quality profiles |
 | [Sonarr](https://sonarr.tv/) | Browse TV library, search & add shows, quality profiles |
-| [Seerr](https://github.com/seerr-team/seerr) | Pending requests, approve / decline, discover trending & upcoming |
+| [Seerr](https://docs.seerr.dev/) | Pending requests, approve / decline, discover trending & upcoming |
 | [Bazarr](https://www.bazarr.media/) | Missing subtitles, trigger subtitle search |
 | [qBittorrent](https://www.qbittorrent.org/) | Active torrents, speed, pause / resume / delete |
 | [SABnzbd](https://sabnzbd.org/) | NZB queue, speed, pause / resume / delete |
