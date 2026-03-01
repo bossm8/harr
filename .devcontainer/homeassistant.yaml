@@ -1,0 +1,31 @@
+harr:
+  radarr:
+    url: !secret radarr_url
+    api_key: !secret radarr_api_key
+    verify_ssl: false
+
+  sonarr:
+    url: !secret sonarr_url
+    api_key: !secret sonarr_api_key
+    verify_ssl: false
+
+  seerr:
+    url: !secret seerr_url
+    api_key: !secret seerr_api_key
+    verify_ssl: true
+
+  bazarr:
+    url: !secret bazarr_url
+    api_key: !secret bazarr_api_key
+    verify_ssl: false
+
+  qbittorrent:
+    url: !secret qbt_url
+    username: !secret qbt_username
+    password: !secret qbt_password
+    verify_ssl: false
+
+  sabnzbd:
+    url: !secret sabnzbd_url
+    api_key: !secret sabnzbd_api_key
+    verify_ssl: false

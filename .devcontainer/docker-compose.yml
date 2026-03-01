@@ -1,0 +1,138 @@
+services:
+
+  # CA Generating service, would allow running squid in transparent mode
+  mitm-ca:
+    image: alpine:latest
+    container_name: mitm-ca
+    command:
+      - /bin/sh
+      - -c
+      - |
+          set -e
+          apk add --no-cache openssl
+          mkdir -p /ca
+
+          echo "Generating MitM CA..."
+          openssl req -new \
+            -newkey rsa:4096 \
+            -nodes -x509 \
+            -sha256 \
+            -days 3650 \
+            -keyout /ca/mitm-ca.key \
+            -out /ca/mitm-ca.crt \
+            -addext "basicConstraints=critical,CA:TRUE" \
+            -addext "keyUsage=critical,keyCertSign,cRLSign" \
+            -addext "subjectKeyIdentifier=hash" \
+            -subj "/C=CH/O=Harr/CN=Squid MitM CA"
+
+          echo "Generating Proxy Cert..."
+          openssl req -new -newkey rsa:4096 -nodes \
+            -keyout /ca/mitm-proxy.key \
+            -out mitm-proxy.csr \
+            -subj "/C=CH/O=Harr/CN=proxy"
+
+          openssl x509 -req \
+            -in mitm-proxy.csr \
+            -CA /ca/mitm-ca.crt \
+            -CAkey /ca/mitm-ca.key \
+            -CAcreateserial \
+            -out /ca/mitm-proxy.crt \
+            -days 3650 -sha256 \
+            -extfile <(printf "basicConstraints=critical,CA:TRUE,pathlen:0\nkeyUsage=critical,keyCertSign,cRLSign\nsubjectKeyIdentifier=hash\nauthorityKeyIdentifier=keyid,issuer")
+
+          cat /ca/mitm-proxy.crt /ca/mitm-ca.crt > /ca/mitm-proxy-chain.crt
+          chmod 644 /ca/mitm-ca.crt
+          chmod 644 /ca/mitm-proxy.crt
+          chmod 644 /ca/mitm-proxy.key
+          chmod 644 /ca/mitm-proxy-chain.crt
+    volumes:
+      - mitm-ca:/ca
+
+  # Custom built proxy with ssl_bump support for experimenting
+  proxy:
+    image: squid
+    container_name: squid-proxy
+    build:
+      context: .
+      dockerfile: Squid.Dockerfile
+    user: squid
+    command:
+      - -N
+      - -d
+      - '1'
+    ports:
+      - 127.0.0.1:3128:3128
+    volumes:
+      - mitm-ca:/ca:ro
+      - ./squid-conf.d/:/etc/squid/conf.d/:ro
+    healthcheck:
+      test: nc -vv -z localhost:3128
+      start_period: 5s
+      start_interval: 5s
+      retries: 2
+      timeout: 1s
+    networks:
+      - internal
+      - external
+    depends_on:
+      mitm-ca:
+        condition: service_completed_successfully
+
+  # Real development container where VSCode attaches to
+  agent-devcontainer:
+    image: harr-dev
+    container_name: harr
+    user: root
+    build:
+      context: .
+      dockerfile: Dev.Dockerfile
+    environment:
+      HTTP_PROXY: http://proxy:3128
+      HTTPS_PROXY: http://proxy:3128
+      CLAUDE_CONFIG_DIR: /home/harr/.claude
+      NODE_EXTRA_CA_CERTS: /usr/local/share/ca-certificates/mitm-ca.crt
+    command:
+      - /bin/bash
+      - -c
+      - |
+          update-ca-certificates
+          sleep inf
+    networks:
+      - internal
+    volumes:
+      - claude-persistence:/home/harr/.claude
+      - type: volume
+        source: mitm-ca
+        target: /usr/local/share/ca-certificates/mitm-ca.crt
+        volume:
+          subpath: mitm-ca.crt
+      - ../:/workspace
+    depends_on:
+      proxy:
+        condition: service_healthy
+      mitm-ca:
+        condition: service_completed_successfully
+
+  # Home Assistant mounting configuration and the integration source
+  # for direct testing of the integration
+  home-assistant:
+    image: homeassistant/home-assistant:2026.2.3
+    container_name: home-assistant
+    volumes:
+      - homeassistant:/config
+      - ./homeassistant.yaml:/config/configuration.yaml
+      - ./ha-secrets.yaml:/config/secrets.yaml
+      - ../custom_components/harr:/config/custom_components/harr:ro
+    ports:
+      - 127.0.0.1:8123:8123
+
+networks:
+  internal:
+    internal: true
+  external:
+    driver: bridge
+
+volumes:
+  mitm-ca:
+  homeassistant:
+  claude-persistence:

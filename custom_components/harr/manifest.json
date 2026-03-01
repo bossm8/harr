@@ -1,0 +1,11 @@
+{
+  "domain": "harr",
+  "name": "Harr",
+  "version": "0.1.0",
+  "documentation": "https://github.com/bossm8/harr",
+  "codeowners": ["@bossm8"],
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "requirements": [],
+  "dependencies": ["http", "frontend", "panel_custom"]
+}

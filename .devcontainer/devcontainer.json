@@ -1,0 +1,26 @@
+{
+  "name": "Harr",
+
+  "dockerComposeFile": "docker-compose.yml",
+
+  "service": "agent-devcontainer",
+
+  "workspaceFolder": "/workspace",
+
+  "remoteUser": "harr",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "openai.chatgpt",
+        "anthropic.claude-code"
+      ],
+      "settings": {
+        "claudeCode.initialPermissionMode": "plan",
+        "claudeCode.preferredLocation": "panel",
+        "claudeCode.useCtrlEnterToSend": true
+      }
+    }
+  }
+}

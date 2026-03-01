@@ -1,0 +1,260 @@
+"""Config flow for the Harr integration."""
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import aiohttp
+import voluptuous as vol
+
+from homeassistant import config_entries
+from homeassistant.core import callback
+
+from .const import (
+    CONF_BAZARR_API_KEY,
+    CONF_BAZARR_URL,
+    CONF_BAZARR_VERIFY_SSL,
+    CONF_SEERR_API_KEY,
+    CONF_SEERR_URL,
+    CONF_SEERR_VERIFY_SSL,
+    CONF_QBT_PASSWORD,
+    CONF_QBT_URL,
+    CONF_QBT_USERNAME,
+    CONF_QBT_VERIFY_SSL,
+    CONF_RADARR_API_KEY,
+    CONF_RADARR_URL,
+    CONF_RADARR_VERIFY_SSL,
+    CONF_SABNZBD_API_KEY,
+    CONF_SABNZBD_URL,
+    CONF_SABNZBD_VERIFY_SSL,
+    CONF_SONARR_API_KEY,
+    CONF_SONARR_URL,
+    CONF_SONARR_VERIFY_SSL,
+    DOMAIN,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+STEP_USER_DATA_SCHEMA = vol.Schema(
+    {
+        # Radarr
+        vol.Optional(CONF_RADARR_URL, default=""): str,
+        vol.Optional(CONF_RADARR_API_KEY, default=""): str,
+        vol.Optional(CONF_RADARR_VERIFY_SSL, default=True): bool,
+        # Sonarr
+        vol.Optional(CONF_SONARR_URL, default=""): str,
+        vol.Optional(CONF_SONARR_API_KEY, default=""): str,
+        vol.Optional(CONF_SONARR_VERIFY_SSL, default=True): bool,
+        # seerr
+        vol.Optional(CONF_SEERR_URL, default=""): str,
+        vol.Optional(CONF_SEERR_API_KEY, default=""): str,
+        vol.Optional(CONF_SEERR_VERIFY_SSL, default=True): bool,
+        # Bazarr
+        vol.Optional(CONF_BAZARR_URL, default=""): str,
+        vol.Optional(CONF_BAZARR_API_KEY, default=""): str,
+        vol.Optional(CONF_BAZARR_VERIFY_SSL, default=True): bool,
+        # qBittorrent
+        vol.Optional(CONF_QBT_URL, default=""): str,
+        vol.Optional(CONF_QBT_USERNAME, default=""): str,
+        vol.Optional(CONF_QBT_PASSWORD, default=""): str,
+        vol.Optional(CONF_QBT_VERIFY_SSL, default=True): bool,
+        # SABnzbd
+        vol.Optional(CONF_SABNZBD_URL, default=""): str,
+        vol.Optional(CONF_SABNZBD_API_KEY, default=""): str,
+        vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=True): bool,
+    }
+)
+
+
+async def _test_api_key_service(
+    session: aiohttp.ClientSession,
+    base_url: str,
+    api_key: str,
+    test_path: str,
+    header_name: str = "X-Api-Key",
+) -> str | None:
+    """Test connection to an API-key-based service. Returns error key or None."""
+    url = f"{base_url.rstrip('/')}/{test_path.lstrip('/')}"
+    try:
+        async with session.get(url, headers={header_name: api_key}, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status == 401:
+                return "invalid_auth"
+            if not resp.ok:
+                return "cannot_connect"
+    except aiohttp.ClientError:
+        return "cannot_connect"
+    return None
+
+
+async def _test_qbt(
+    session: aiohttp.ClientSession,
+    base_url: str,
+    username: str,
+    password: str,
+) -> str | None:
+    """Test qBittorrent connection. Returns error key or None."""
+    url = f"{base_url.rstrip('/')}/api/v2/auth/login"
+    try:
+        async with session.post(
+            url,
+            data={"username": username, "password": password},
+            timeout=aiohttp.ClientTimeout(total=10),
+        ) as resp:
+            body = await resp.text()
+            if body.strip() == "Fails.":
+                return "invalid_auth"
+            if not resp.ok:
+                return "cannot_connect"
+    except aiohttp.ClientError:
+        return "cannot_connect"
+    return None
+
+
+def _make_session(verify_ssl: bool) -> aiohttp.ClientSession:
+    """Create a standalone aiohttp session for connection testing.
+
+    Deliberately not using async_get_clientsession / async_create_clientsession
+    so the session is fully owned here and safe to close after each test.
+    """
+    connector = aiohttp.TCPConnector(ssl=None if verify_ssl else False)
+    return aiohttp.ClientSession(connector=connector)
+
+
+async def _validate_input(data: dict) -> dict:
+    """Validate each configured service. Returns dict of field -> error."""
+    errors: dict[str, str] = {}
+
+    if data.get(CONF_RADARR_URL):
+        async with _make_session(data.get(CONF_RADARR_VERIFY_SSL, True)) as session:
+            err = await _test_api_key_service(session, data[CONF_RADARR_URL], data.get(CONF_RADARR_API_KEY, ""), "api/v3/system/status")
+            if err:
+                errors["radarr"] = err
+
+    if data.get(CONF_SONARR_URL):
+        async with _make_session(data.get(CONF_SONARR_VERIFY_SSL, True)) as session:
+            err = await _test_api_key_service(session, data[CONF_SONARR_URL], data.get(CONF_SONARR_API_KEY, ""), "api/v3/system/status")
+            if err:
+                errors["sonarr"] = err
+
+    if data.get(CONF_SEERR_URL):
+        async with _make_session(data.get(CONF_SEERR_VERIFY_SSL, True)) as session:
+            err = await _test_api_key_service(session, data[CONF_SEERR_URL], data.get(CONF_SEERR_API_KEY, ""), "api/v1/status")
+            if err:
+                errors["seerr"] = err
+
+    if data.get(CONF_BAZARR_URL):
+        async with _make_session(data.get(CONF_BAZARR_VERIFY_SSL, True)) as session:
+            err = await _test_api_key_service(session, data[CONF_BAZARR_URL], data.get(CONF_BAZARR_API_KEY, ""), "api/system/status")
+            if err:
+                errors["bazarr"] = err
+
+    if data.get(CONF_QBT_URL):
+        async with _make_session(data.get(CONF_QBT_VERIFY_SSL, True)) as session:
+            err = await _test_qbt(session, data[CONF_QBT_URL], data.get(CONF_QBT_USERNAME, ""), data.get(CONF_QBT_PASSWORD, ""))
+            if err:
+                errors["qbittorrent"] = err
+
+    if data.get(CONF_SABNZBD_URL):
+        async with _make_session(data.get(CONF_SABNZBD_VERIFY_SSL, True)) as session:
+            err = await _test_api_key_service(
+                session,
+                data[CONF_SABNZBD_URL],
+                data.get(CONF_SABNZBD_API_KEY, ""),
+                f"api?mode=version&output=json&apikey={data.get(CONF_SABNZBD_API_KEY, '')}",
+                header_name="X-Api-Key-Unused",  # SABnzbd uses query param, not header
+            )
+            if err:
+                errors["sabnzbd"] = err
+
+    return errors
+
+
+class HarrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for Harr."""
+
+    VERSION = 1
+
+    async def async_step_import(
+        self, user_input: dict[str, Any]
+    ) -> config_entries.FlowResult:
+        """Create a config entry from YAML. Skip live validation (trusted source)."""
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
+        return self.async_create_entry(title="Harr", data=user_input)
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.FlowResult:
+        """Handle the initial step."""
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
+
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            errors = await _validate_input(user_input)
+            if not errors:
+                return self.async_create_entry(title="Harr", data=user_input)
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> HarrOptionsFlow:
+        """Return the options flow."""
+        return HarrOptionsFlow()
+
+
+class HarrOptionsFlow(config_entries.OptionsFlow):
+    """Handle options flow for Harr."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.FlowResult:
+        """Manage the options."""
+        errors: dict[str, str] = {}
+        current = {**self.config_entry.data}
+
+        if user_input is not None:
+            errors = await _validate_input(user_input)
+            if not errors:
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, data=user_input
+                )
+                return self.async_create_entry(title="", data={})
+
+        schema = vol.Schema(
+            {
+                vol.Optional(CONF_RADARR_URL, default=current.get(CONF_RADARR_URL, "")): str,
+                vol.Optional(CONF_RADARR_API_KEY, default=current.get(CONF_RADARR_API_KEY, "")): str,
+                vol.Optional(CONF_RADARR_VERIFY_SSL, default=current.get(CONF_RADARR_VERIFY_SSL, True)): bool,
+                vol.Optional(CONF_SONARR_URL, default=current.get(CONF_SONARR_URL, "")): str,
+                vol.Optional(CONF_SONARR_API_KEY, default=current.get(CONF_SONARR_API_KEY, "")): str,
+                vol.Optional(CONF_SONARR_VERIFY_SSL, default=current.get(CONF_SONARR_VERIFY_SSL, True)): bool,
+                vol.Optional(CONF_SEERR_URL, default=current.get(CONF_SEERR_URL, "")): str,
+                vol.Optional(CONF_SEERR_API_KEY, default=current.get(CONF_SEERR_API_KEY, "")): str,
+                vol.Optional(CONF_SEERR_VERIFY_SSL, default=current.get(CONF_SEERR_VERIFY_SSL, True)): bool,
+                vol.Optional(CONF_BAZARR_URL, default=current.get(CONF_BAZARR_URL, "")): str,
+                vol.Optional(CONF_BAZARR_API_KEY, default=current.get(CONF_BAZARR_API_KEY, "")): str,
+                vol.Optional(CONF_BAZARR_VERIFY_SSL, default=current.get(CONF_BAZARR_VERIFY_SSL, True)): bool,
+                vol.Optional(CONF_QBT_URL, default=current.get(CONF_QBT_URL, "")): str,
+                vol.Optional(CONF_QBT_USERNAME, default=current.get(CONF_QBT_USERNAME, "")): str,
+                vol.Optional(CONF_QBT_PASSWORD, default=current.get(CONF_QBT_PASSWORD, "")): str,
+                vol.Optional(CONF_QBT_VERIFY_SSL, default=current.get(CONF_QBT_VERIFY_SSL, True)): bool,
+                vol.Optional(CONF_SABNZBD_URL, default=current.get(CONF_SABNZBD_URL, "")): str,
+                vol.Optional(CONF_SABNZBD_API_KEY, default=current.get(CONF_SABNZBD_API_KEY, "")): str,
+                vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=current.get(CONF_SABNZBD_VERIFY_SSL, True)): bool,
+            }
+        )
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=schema,
+            errors=errors,
+        )
