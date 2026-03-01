@@ -248,3 +248,4 @@ This repo has also a devcontainer docker-compose stack with the following basic 
 
 - This is a vibe-coded project, I'm no application developer, although I tried to follow docs and verified stuff, there could be bugs. I did not invest a huge time, and don't plan to do so, so use at your own risk.
 - The main idea was to have a nzb360 like integration for myself, so maintenance is not guaranteed.
+- This project is an independent, unofficial integration and is not affiliated with, endorsed by, or connected to nzb360 or any of the Servarr projects.
