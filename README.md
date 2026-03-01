@@ -2,6 +2,10 @@
 
 <p align="center"><img src="./custom_components/harr/brand/icon.png" alt="harr"/></p>
 
+> [!CAUTION]
+> **Personal hobby project — use at your own risk.**
+> This integration was built for my own setup and is shared as-is. Bugs are expected, and ongoing maintenance is not guaranteed. Issues and PRs are welcome, but don't rely on prompt responses or long-term support.
+
 A Home Assistant custom integration that brings [nzb360](https://nzb360.com/)-style media management into your HA sidebar. Manage your entire media stack from one place without leaving Home Assistant.
 
 **Supported services:**
@@ -244,8 +248,4 @@ This repo has also a devcontainer docker-compose stack with the following basic 
 - Squid proxy to proxy and filter requests coming from the devontainer, connected to the internet. (Note: I used this repo also to get familiar with squid proxy, so there might be features not relevant for basic proxying with the harr use-case)
 - Home Assistant container to mount and test the harr integration on the fly
 
-## Notes
-
-- This is a vibe-coded project, I'm no application developer, although I tried to follow docs and verified stuff, there could be bugs. I did not invest a huge time, and don't plan to do so, so use at your own risk.
-- The main idea was to have a nzb360 like integration for myself, so maintenance is not guaranteed.
-- This project is an independent, unofficial integration and is not affiliated with, endorsed by, or connected to nzb360 or any of the Servarr projects.
+> This project is an independent, unofficial integration and is not affiliated with, endorsed by, or connected to nzb360 or any of the Servarr projects.
