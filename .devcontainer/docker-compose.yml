@@ -49,6 +49,8 @@ services:
       - mitm-ca:/ca
 
   # Custom built proxy with ssl_bump support for experimenting
+  # To reload after config changes run:
+  # docker exec squid-proxy /bin/sh -c 'kill -s HUP $(cat /var/run/squid/squid.pid)'
   proxy:
     image: squid
     container_name: squid-proxy
@@ -116,7 +118,7 @@ services:
   # Home Assistant mounting configuration and the integration source
   # for direct testing of the integration
   home-assistant:
-    image: homeassistant/home-assistant:2026.2.3
+    image: homeassistant/home-assistant:beta
     container_name: home-assistant
     volumes:
       - homeassistant:/config
