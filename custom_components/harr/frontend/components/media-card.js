@@ -834,7 +834,7 @@ class HarrMediaCard extends HTMLElement {
       const eps = seasonMap.get(seasonNum).sort((a, b) => a.episodeNumber - b.episodeNumber);
       const downloaded = eps.filter(e => e.hasFile).length;
       const label = seasonNum === 0 ? "Specials" : `Season ${seasonNum}`;
-      const openAttr = si === 0 && seasonNum !== 0 ? " open" : "";
+      const openAttr = "";
 
       // Season monitor state from the series object
       const rawSeason = raw.seasons?.find(s => s.seasonNumber === seasonNum);
@@ -848,8 +848,8 @@ class HarrMediaCard extends HTMLElement {
         const ef = ep.hasFile ? (fileMap[ep.episodeFileId] || null) : null;
 
         const fileIcon = ef
-          ? `<span class="ep-file-ok" title="${_esc(ef.relativePath || "")}">✓</span>`
-          : `<span class="ep-file-na">✗</span>`;
+          ? `<span class="ep-file-ok" title="${_esc(ef.relativePath || "")}"></span>`
+          : `<span class="ep-file-na" title="No file downloaded"></span>`;
 
         // Filename + quality + size on indented lines below the title row
         let metaHtml = "";
