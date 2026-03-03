@@ -7,6 +7,7 @@ import os
 import voluptuous as vol
 
 from homeassistant.components import panel_custom
+from homeassistant.components.frontend import async_remove_panel
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.core import HomeAssistant
@@ -36,9 +37,8 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 FRONTEND_URL = "/harr-frontend"
 PANEL_URL = "/harr-frontend/harr-panel.js"
 
-# Key used to track whether HTTP assets (static path + panel) have already been
-# registered for this HA process lifetime. These registrations survive config
-# entry reloads and must only happen once.
+# Key used to track whether static paths and views have been registered for this
+# HA process lifetime. These have no removal API and must only be registered once.
 _HTTP_REGISTERED_KEY = f"{DOMAIN}_http_registered"
 
 # ── YAML configuration schema ────────────────────────────────────────────────
@@ -135,15 +135,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN] = dict(entry.data)
 
-    # Static path and panel registration must only happen once per process
-    # lifetime — reloading the config entry (e.g. after editing credentials)
-    # must not attempt to re-register them.
+    # Static paths and views: register once per process lifetime (no removal API)
     if not hass.data.get(_HTTP_REGISTERED_KEY):
         await hass.http.async_register_static_paths(
             [StaticPathConfig(FRONTEND_URL, FRONTEND_DIR, cache_headers=False)]
         )
 
-        # Register all proxy views (HA deduplicates by name, but guard anyway)
         for view_class in [
             RadarrProxyView,
             SonarrProxyView,
@@ -155,18 +152,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ]:
             hass.http.register_view(view_class)
 
-        await panel_custom.async_register_panel(
-            hass,
-            webcomponent_name="ha-harr",
-            sidebar_title="Harr",
-            sidebar_icon="mdi:movie-open",
-            frontend_url_path="harr",
-            module_url=PANEL_URL,
-            require_admin=bool(entry.data.get(CONF_ADMIN_ONLY, False)),
-            config={},
-        )
-
         hass.data[_HTTP_REGISTERED_KEY] = True
+
+    # Panel: remove then re-register on every setup so require_admin reflects
+    # the current config without needing a full HA restart.
+    async_remove_panel(hass, "harr", warn_if_unknown=False)
+    await panel_custom.async_register_panel(
+        hass,
+        webcomponent_name="ha-harr",
+        sidebar_title="Harr",
+        sidebar_icon="mdi:movie-open",
+        frontend_url_path="harr",
+        module_url=PANEL_URL,
+        require_admin=bool(entry.data.get(CONF_ADMIN_ONLY, False)),
+        config={},
+    )
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
@@ -179,7 +179,6 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    # Panel and views registered on hass.http persist for the process lifetime
-    # but we clean up our data store
+    async_remove_panel(hass, "harr", warn_if_unknown=False)
     hass.data.pop(DOMAIN, None)
     return True

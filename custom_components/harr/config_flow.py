@@ -9,6 +9,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import section
 
 from .const import (
     CONF_ADMIN_ONLY,
@@ -36,35 +37,75 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def _flatten_sections(data: dict) -> dict:
+    """Flatten section-nested form submission into a flat dict for storage."""
+    flat = {}
+    for key, val in data.items():
+        if isinstance(val, dict):
+            flat.update(val)
+        else:
+            flat[key] = val
+    return flat
+
+
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        # Radarr
-        vol.Optional(CONF_RADARR_URL, default=""): str,
-        vol.Optional(CONF_RADARR_API_KEY, default=""): str,
-        vol.Optional(CONF_RADARR_VERIFY_SSL, default=True): bool,
-        # Sonarr
-        vol.Optional(CONF_SONARR_URL, default=""): str,
-        vol.Optional(CONF_SONARR_API_KEY, default=""): str,
-        vol.Optional(CONF_SONARR_VERIFY_SSL, default=True): bool,
-        # seerr
-        vol.Optional(CONF_SEERR_URL, default=""): str,
-        vol.Optional(CONF_SEERR_API_KEY, default=""): str,
-        vol.Optional(CONF_SEERR_VERIFY_SSL, default=True): bool,
-        # Bazarr
-        vol.Optional(CONF_BAZARR_URL, default=""): str,
-        vol.Optional(CONF_BAZARR_API_KEY, default=""): str,
-        vol.Optional(CONF_BAZARR_VERIFY_SSL, default=True): bool,
-        # qBittorrent
-        vol.Optional(CONF_QBT_URL, default=""): str,
-        vol.Optional(CONF_QBT_USERNAME, default=""): str,
-        vol.Optional(CONF_QBT_PASSWORD, default=""): str,
-        vol.Optional(CONF_QBT_VERIFY_SSL, default=True): bool,
-        # SABnzbd
-        vol.Optional(CONF_SABNZBD_URL, default=""): str,
-        vol.Optional(CONF_SABNZBD_API_KEY, default=""): str,
-        vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=True): bool,
-        # Access control
-        vol.Optional(CONF_ADMIN_ONLY, default=False): bool,
+        vol.Required("radarr"): section(
+            vol.Schema({
+                vol.Optional(CONF_RADARR_URL, default=""): str,
+                vol.Optional(CONF_RADARR_API_KEY, default=""): str,
+                vol.Optional(CONF_RADARR_VERIFY_SSL, default=True): bool,
+            }),
+            {"collapsed": False},
+        ),
+        vol.Required("sonarr"): section(
+            vol.Schema({
+                vol.Optional(CONF_SONARR_URL, default=""): str,
+                vol.Optional(CONF_SONARR_API_KEY, default=""): str,
+                vol.Optional(CONF_SONARR_VERIFY_SSL, default=True): bool,
+            }),
+            {"collapsed": False},
+        ),
+        vol.Required("seerr"): section(
+            vol.Schema({
+                vol.Optional(CONF_SEERR_URL, default=""): str,
+                vol.Optional(CONF_SEERR_API_KEY, default=""): str,
+                vol.Optional(CONF_SEERR_VERIFY_SSL, default=True): bool,
+            }),
+            {"collapsed": False},
+        ),
+        vol.Required("bazarr"): section(
+            vol.Schema({
+                vol.Optional(CONF_BAZARR_URL, default=""): str,
+                vol.Optional(CONF_BAZARR_API_KEY, default=""): str,
+                vol.Optional(CONF_BAZARR_VERIFY_SSL, default=True): bool,
+            }),
+            {"collapsed": False},
+        ),
+        vol.Required("qbittorrent"): section(
+            vol.Schema({
+                vol.Optional(CONF_QBT_URL, default=""): str,
+                vol.Optional(CONF_QBT_USERNAME, default=""): str,
+                vol.Optional(CONF_QBT_PASSWORD, default=""): str,
+                vol.Optional(CONF_QBT_VERIFY_SSL, default=True): bool,
+            }),
+            {"collapsed": False},
+        ),
+        vol.Required("sabnzbd"): section(
+            vol.Schema({
+                vol.Optional(CONF_SABNZBD_URL, default=""): str,
+                vol.Optional(CONF_SABNZBD_API_KEY, default=""): str,
+                vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=True): bool,
+            }),
+            {"collapsed": False},
+        ),
+        vol.Required("access_control"): section(
+            vol.Schema({
+                vol.Optional(CONF_ADMIN_ONLY, default=False): bool,
+            }),
+            {"collapsed": False},
+        ),
     }
 )
 
@@ -131,31 +172,31 @@ async def _validate_input(data: dict) -> dict:
         async with _make_session(data.get(CONF_RADARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_RADARR_URL], data.get(CONF_RADARR_API_KEY, ""), "api/v3/system/status")
             if err:
-                errors[CONF_RADARR_URL] = err
+                errors["radarr"] = err
 
     if data.get(CONF_SONARR_URL):
         async with _make_session(data.get(CONF_SONARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_SONARR_URL], data.get(CONF_SONARR_API_KEY, ""), "api/v3/system/status")
             if err:
-                errors[CONF_SONARR_URL] = err
+                errors["sonarr"] = err
 
     if data.get(CONF_SEERR_URL):
         async with _make_session(data.get(CONF_SEERR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_SEERR_URL], data.get(CONF_SEERR_API_KEY, ""), "api/v1/status")
             if err:
-                errors[CONF_SEERR_URL] = err
+                errors["seerr"] = err
 
     if data.get(CONF_BAZARR_URL):
         async with _make_session(data.get(CONF_BAZARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_BAZARR_URL], data.get(CONF_BAZARR_API_KEY, ""), "api/system/status")
             if err:
-                errors[CONF_BAZARR_URL] = err
+                errors["bazarr"] = err
 
     if data.get(CONF_QBT_URL):
         async with _make_session(data.get(CONF_QBT_VERIFY_SSL, True)) as session:
             err = await _test_qbt(session, data[CONF_QBT_URL], data.get(CONF_QBT_USERNAME, ""), data.get(CONF_QBT_PASSWORD, ""))
             if err:
-                errors[CONF_QBT_URL] = err
+                errors["qbittorrent"] = err
 
     if data.get(CONF_SABNZBD_URL):
         async with _make_session(data.get(CONF_SABNZBD_VERIFY_SSL, True)) as session:
@@ -167,7 +208,7 @@ async def _validate_input(data: dict) -> dict:
                 header_name="X-Api-Key-Unused",  # SABnzbd uses query param, not header
             )
             if err:
-                errors[CONF_SABNZBD_URL] = err
+                errors["sabnzbd"] = err
 
     return errors
 
@@ -195,9 +236,10 @@ class HarrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            errors = await _validate_input(user_input)
+            flat = _flatten_sections(user_input)
+            errors = await _validate_input(flat)
             if not errors:
-                return self.async_create_entry(title="Harr", data=user_input)
+                return self.async_create_entry(title="Harr", data=flat)
 
         return self.async_show_form(
             step_id="user",
@@ -225,36 +267,71 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
         current = {**self.config_entry.data}
 
         if user_input is not None:
-            errors = await _validate_input(user_input)
+            flat = _flatten_sections(user_input)
+            errors = await _validate_input(flat)
             if not errors:
                 self.hass.config_entries.async_update_entry(
-                    self.config_entry, data=user_input
+                    self.config_entry, data=flat
                 )
                 return self.async_create_entry(title="", data={})
 
         schema = vol.Schema(
             {
-                vol.Optional(CONF_RADARR_URL, default=current.get(CONF_RADARR_URL, "")): str,
-                vol.Optional(CONF_RADARR_API_KEY, default=current.get(CONF_RADARR_API_KEY, "")): str,
-                vol.Optional(CONF_RADARR_VERIFY_SSL, default=current.get(CONF_RADARR_VERIFY_SSL, True)): bool,
-                vol.Optional(CONF_SONARR_URL, default=current.get(CONF_SONARR_URL, "")): str,
-                vol.Optional(CONF_SONARR_API_KEY, default=current.get(CONF_SONARR_API_KEY, "")): str,
-                vol.Optional(CONF_SONARR_VERIFY_SSL, default=current.get(CONF_SONARR_VERIFY_SSL, True)): bool,
-                vol.Optional(CONF_SEERR_URL, default=current.get(CONF_SEERR_URL, "")): str,
-                vol.Optional(CONF_SEERR_API_KEY, default=current.get(CONF_SEERR_API_KEY, "")): str,
-                vol.Optional(CONF_SEERR_VERIFY_SSL, default=current.get(CONF_SEERR_VERIFY_SSL, True)): bool,
-                vol.Optional(CONF_BAZARR_URL, default=current.get(CONF_BAZARR_URL, "")): str,
-                vol.Optional(CONF_BAZARR_API_KEY, default=current.get(CONF_BAZARR_API_KEY, "")): str,
-                vol.Optional(CONF_BAZARR_VERIFY_SSL, default=current.get(CONF_BAZARR_VERIFY_SSL, True)): bool,
-                vol.Optional(CONF_QBT_URL, default=current.get(CONF_QBT_URL, "")): str,
-                vol.Optional(CONF_QBT_USERNAME, default=current.get(CONF_QBT_USERNAME, "")): str,
-                vol.Optional(CONF_QBT_PASSWORD, default=current.get(CONF_QBT_PASSWORD, "")): str,
-                vol.Optional(CONF_QBT_VERIFY_SSL, default=current.get(CONF_QBT_VERIFY_SSL, True)): bool,
-                vol.Optional(CONF_SABNZBD_URL, default=current.get(CONF_SABNZBD_URL, "")): str,
-                vol.Optional(CONF_SABNZBD_API_KEY, default=current.get(CONF_SABNZBD_API_KEY, "")): str,
-                vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=current.get(CONF_SABNZBD_VERIFY_SSL, True)): bool,
-                # Access control
-                vol.Optional(CONF_ADMIN_ONLY, default=current.get(CONF_ADMIN_ONLY, False)): bool,
+                vol.Required("radarr"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_RADARR_URL, default=current.get(CONF_RADARR_URL, "")): str,
+                        vol.Optional(CONF_RADARR_API_KEY, default=current.get(CONF_RADARR_API_KEY, "")): str,
+                        vol.Optional(CONF_RADARR_VERIFY_SSL, default=current.get(CONF_RADARR_VERIFY_SSL, True)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
+                vol.Required("sonarr"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_SONARR_URL, default=current.get(CONF_SONARR_URL, "")): str,
+                        vol.Optional(CONF_SONARR_API_KEY, default=current.get(CONF_SONARR_API_KEY, "")): str,
+                        vol.Optional(CONF_SONARR_VERIFY_SSL, default=current.get(CONF_SONARR_VERIFY_SSL, True)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
+                vol.Required("seerr"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_SEERR_URL, default=current.get(CONF_SEERR_URL, "")): str,
+                        vol.Optional(CONF_SEERR_API_KEY, default=current.get(CONF_SEERR_API_KEY, "")): str,
+                        vol.Optional(CONF_SEERR_VERIFY_SSL, default=current.get(CONF_SEERR_VERIFY_SSL, True)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
+                vol.Required("bazarr"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_BAZARR_URL, default=current.get(CONF_BAZARR_URL, "")): str,
+                        vol.Optional(CONF_BAZARR_API_KEY, default=current.get(CONF_BAZARR_API_KEY, "")): str,
+                        vol.Optional(CONF_BAZARR_VERIFY_SSL, default=current.get(CONF_BAZARR_VERIFY_SSL, True)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
+                vol.Required("qbittorrent"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_QBT_URL, default=current.get(CONF_QBT_URL, "")): str,
+                        vol.Optional(CONF_QBT_USERNAME, default=current.get(CONF_QBT_USERNAME, "")): str,
+                        vol.Optional(CONF_QBT_PASSWORD, default=current.get(CONF_QBT_PASSWORD, "")): str,
+                        vol.Optional(CONF_QBT_VERIFY_SSL, default=current.get(CONF_QBT_VERIFY_SSL, True)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
+                vol.Required("sabnzbd"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_SABNZBD_URL, default=current.get(CONF_SABNZBD_URL, "")): str,
+                        vol.Optional(CONF_SABNZBD_API_KEY, default=current.get(CONF_SABNZBD_API_KEY, "")): str,
+                        vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=current.get(CONF_SABNZBD_VERIFY_SSL, True)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
+                vol.Required("access_control"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_ADMIN_ONLY, default=current.get(CONF_ADMIN_ONLY, False)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
             }
         )
 

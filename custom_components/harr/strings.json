@@ -6,57 +6,81 @@
         "description": "Enter connection details for each service you want to use. Leave URL empty to disable a service.",
         "sections": {
           "radarr": {
-            "name": "Radarr (Movies)"
+            "name": "Radarr (Movies)",
+            "data": {
+              "radarr_url": "Radarr URL",
+              "radarr_api_key": "Radarr API Key",
+              "radarr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "radarr_url": "e.g. http://192.168.1.10:7878"
+            }
           },
           "sonarr": {
-            "name": "Sonarr (TV Shows)"
+            "name": "Sonarr (TV Shows)",
+            "data": {
+              "sonarr_url": "Sonarr URL",
+              "sonarr_api_key": "Sonarr API Key",
+              "sonarr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "sonarr_url": "e.g. http://192.168.1.10:8989"
+            }
           },
           "seerr": {
-            "name": "Seerr (Requests)"
+            "name": "Seerr (Requests)",
+            "data": {
+              "seerr_url": "Seerr URL",
+              "seerr_api_key": "Seerr API Key",
+              "seerr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "seerr_url": "e.g. http://192.168.1.10:5055"
+            }
           },
           "bazarr": {
-            "name": "Bazarr (Subtitles)"
+            "name": "Bazarr (Subtitles)",
+            "data": {
+              "bazarr_url": "Bazarr URL",
+              "bazarr_api_key": "Bazarr API Key",
+              "bazarr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "bazarr_url": "e.g. http://192.168.1.10:6767"
+            }
           },
           "qbittorrent": {
-            "name": "qBittorrent"
+            "name": "qBittorrent",
+            "data": {
+              "qbt_url": "qBittorrent URL",
+              "qbt_username": "Username",
+              "qbt_password": "Password",
+              "qbt_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "qbt_url": "e.g. http://192.168.1.10:8080"
+            }
           },
           "sabnzbd": {
-            "name": "SABnzbd"
+            "name": "SABnzbd",
+            "data": {
+              "sabnzbd_url": "SABnzbd URL",
+              "sabnzbd_api_key": "SABnzbd API Key",
+              "sabnzbd_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "sabnzbd_url": "e.g. http://192.168.1.10:8080"
+            }
           },
           "access_control": {
-            "name": "Access Control"
+            "name": "Access Control",
+            "data": {
+              "admin_only": "Allow admin access only"
+            },
+            "data_description": {
+              "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
+            }
           }
-        },
-        "data": {
-          "radarr_url": "Radarr URL",
-          "radarr_api_key": "Radarr API Key",
-          "radarr_verify_ssl": "Verify SSL certificate",
-          "sonarr_url": "Sonarr URL",
-          "sonarr_api_key": "Sonarr API Key",
-          "sonarr_verify_ssl": "Verify SSL certificate",
-          "seerr_url": "seerr URL",
-          "seerr_api_key": "seerr API Key",
-          "seerr_verify_ssl": "Verify SSL certificate",
-          "bazarr_url": "Bazarr URL",
-          "bazarr_api_key": "Bazarr API Key",
-          "bazarr_verify_ssl": "Verify SSL certificate",
-          "qbt_url": "qBittorrent URL",
-          "qbt_username": "Username",
-          "qbt_password": "Password",
-          "qbt_verify_ssl": "Verify SSL certificate",
-          "sabnzbd_url": "SABnzbd URL",
-          "sabnzbd_api_key": "SABnzbd API Key",
-          "sabnzbd_verify_ssl": "Verify SSL certificate",
-          "admin_only": "Allow admin access only"
-        },
-        "data_description": {
-          "radarr_url": "e.g. http://192.168.1.10:7878",
-          "sonarr_url": "e.g. http://192.168.1.10:8989",
-          "seerr_url": "e.g. http://192.168.1.10:5055",
-          "bazarr_url": "e.g. http://192.168.1.10:6767",
-          "qbt_url": "e.g. http://192.168.1.10:8080",
-          "sabnzbd_url": "e.g. http://192.168.1.10:8080",
-          "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
         }
       }
     },
@@ -75,51 +99,81 @@
         "title": "Update Harr Settings",
         "sections": {
           "radarr": {
-            "name": "Radarr (Movies)"
+            "name": "Radarr (Movies)",
+            "data": {
+              "radarr_url": "Radarr URL",
+              "radarr_api_key": "Radarr API Key",
+              "radarr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "radarr_url": "e.g. http://192.168.1.10:7878"
+            }
           },
           "sonarr": {
-            "name": "Sonarr (TV Shows)"
+            "name": "Sonarr (TV Shows)",
+            "data": {
+              "sonarr_url": "Sonarr URL",
+              "sonarr_api_key": "Sonarr API Key",
+              "sonarr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "sonarr_url": "e.g. http://192.168.1.10:8989"
+            }
           },
           "seerr": {
-            "name": "Seerr (Requests)"
+            "name": "Seerr (Requests)",
+            "data": {
+              "seerr_url": "Seerr URL",
+              "seerr_api_key": "Seerr API Key",
+              "seerr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "seerr_url": "e.g. http://192.168.1.10:5055"
+            }
           },
           "bazarr": {
-            "name": "Bazarr (Subtitles)"
+            "name": "Bazarr (Subtitles)",
+            "data": {
+              "bazarr_url": "Bazarr URL",
+              "bazarr_api_key": "Bazarr API Key",
+              "bazarr_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "bazarr_url": "e.g. http://192.168.1.10:6767"
+            }
           },
           "qbittorrent": {
-            "name": "qBittorrent"
+            "name": "qBittorrent",
+            "data": {
+              "qbt_url": "qBittorrent URL",
+              "qbt_username": "Username",
+              "qbt_password": "Password",
+              "qbt_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "qbt_url": "e.g. http://192.168.1.10:8080"
+            }
           },
           "sabnzbd": {
-            "name": "SABnzbd"
+            "name": "SABnzbd",
+            "data": {
+              "sabnzbd_url": "SABnzbd URL",
+              "sabnzbd_api_key": "SABnzbd API Key",
+              "sabnzbd_verify_ssl": "Verify SSL certificate"
+            },
+            "data_description": {
+              "sabnzbd_url": "e.g. http://192.168.1.10:8080"
+            }
           },
           "access_control": {
-            "name": "Access Control"
+            "name": "Access Control",
+            "data": {
+              "admin_only": "Allow admin access only"
+            },
+            "data_description": {
+              "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
+            }
           }
-        },
-        "data": {
-          "radarr_url": "Radarr URL",
-          "radarr_api_key": "Radarr API Key",
-          "radarr_verify_ssl": "Verify SSL certificate",
-          "sonarr_url": "Sonarr URL",
-          "sonarr_api_key": "Sonarr API Key",
-          "sonarr_verify_ssl": "Verify SSL certificate",
-          "seerr_url": "Seerr URL",
-          "seerr_api_key": "Seerr API Key",
-          "seerr_verify_ssl": "Verify SSL certificate",
-          "bazarr_url": "Bazarr URL",
-          "bazarr_api_key": "Bazarr API Key",
-          "bazarr_verify_ssl": "Verify SSL certificate",
-          "qbt_url": "qBittorrent URL",
-          "qbt_username": "Username",
-          "qbt_password": "Password",
-          "qbt_verify_ssl": "Verify SSL certificate",
-          "sabnzbd_url": "SABnzbd URL",
-          "sabnzbd_api_key": "SABnzbd API Key",
-          "sabnzbd_verify_ssl": "Verify SSL certificate",
-          "admin_only": "Allow admin access only"
-        },
-        "data_description": {
-          "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
         }
       }
     }
