@@ -6,10 +6,11 @@ import logging
 import aiohttp
 from aiohttp import web
 
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.components.http import HomeAssistantView, KEY_HASS_USER
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from ..const import (
+    CONF_ADMIN_ONLY,
     CONF_QBT_PASSWORD,
     CONF_QBT_URL,
     CONF_QBT_USERNAME,
@@ -73,6 +74,15 @@ class QBittorrentProxyView(HomeAssistantView):
         """Proxy the request, re-authenticating on 403."""
         hass = request.app["hass"]
         config: dict = hass.data.get(DOMAIN, {})
+
+        if config.get(CONF_ADMIN_ONLY):
+            user = request.get(KEY_HASS_USER)
+            if not user or not user.is_admin:
+                return web.Response(
+                    status=403,
+                    content_type="application/json",
+                    text='{"error": "Admin access required"}',
+                )
 
         base_url = config.get(CONF_QBT_URL, "").rstrip("/")
         if not base_url:

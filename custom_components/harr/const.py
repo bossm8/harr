@@ -35,3 +35,6 @@ CONF_SABNZBD_VERIFY_SSL = "sabnzbd_verify_ssl"
 
 # Runtime data keys
 DATA_QBT_COOKIE = "qbt_cookie"
+
+# Access control
+CONF_ADMIN_ONLY = "admin_only"

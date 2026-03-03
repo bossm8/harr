@@ -8,10 +8,10 @@ import aiohttp
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadGateway, HTTPServiceUnavailable
 
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.components.http import HomeAssistantView, KEY_HASS_USER
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from ..const import DOMAIN
+from ..const import CONF_ADMIN_ONLY, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +53,15 @@ class GenericProxyView(HomeAssistantView):
         """Proxy the request to the upstream service."""
         hass = request.app["hass"]
         config: dict = hass.data.get(DOMAIN, {})
+
+        if config.get(CONF_ADMIN_ONLY):
+            user = request.get(KEY_HASS_USER)
+            if not user or not user.is_admin:
+                return web.Response(
+                    status=403,
+                    content_type="application/json",
+                    text='{"error": "Admin access required"}',
+                )
 
         base_url = config.get(self.base_url_key, "").rstrip("/")
         if not base_url:

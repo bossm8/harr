@@ -11,6 +11,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 
 from .const import (
+    CONF_ADMIN_ONLY,
     CONF_BAZARR_API_KEY,
     CONF_BAZARR_URL,
     CONF_BAZARR_VERIFY_SSL,
@@ -62,6 +63,8 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_SABNZBD_URL, default=""): str,
         vol.Optional(CONF_SABNZBD_API_KEY, default=""): str,
         vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=True): bool,
+        # Access control
+        vol.Optional(CONF_ADMIN_ONLY, default=False): bool,
     }
 )
 
@@ -128,31 +131,31 @@ async def _validate_input(data: dict) -> dict:
         async with _make_session(data.get(CONF_RADARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_RADARR_URL], data.get(CONF_RADARR_API_KEY, ""), "api/v3/system/status")
             if err:
-                errors["radarr"] = err
+                errors[CONF_RADARR_URL] = err
 
     if data.get(CONF_SONARR_URL):
         async with _make_session(data.get(CONF_SONARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_SONARR_URL], data.get(CONF_SONARR_API_KEY, ""), "api/v3/system/status")
             if err:
-                errors["sonarr"] = err
+                errors[CONF_SONARR_URL] = err
 
     if data.get(CONF_SEERR_URL):
         async with _make_session(data.get(CONF_SEERR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_SEERR_URL], data.get(CONF_SEERR_API_KEY, ""), "api/v1/status")
             if err:
-                errors["seerr"] = err
+                errors[CONF_SEERR_URL] = err
 
     if data.get(CONF_BAZARR_URL):
         async with _make_session(data.get(CONF_BAZARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_BAZARR_URL], data.get(CONF_BAZARR_API_KEY, ""), "api/system/status")
             if err:
-                errors["bazarr"] = err
+                errors[CONF_BAZARR_URL] = err
 
     if data.get(CONF_QBT_URL):
         async with _make_session(data.get(CONF_QBT_VERIFY_SSL, True)) as session:
             err = await _test_qbt(session, data[CONF_QBT_URL], data.get(CONF_QBT_USERNAME, ""), data.get(CONF_QBT_PASSWORD, ""))
             if err:
-                errors["qbittorrent"] = err
+                errors[CONF_QBT_URL] = err
 
     if data.get(CONF_SABNZBD_URL):
         async with _make_session(data.get(CONF_SABNZBD_VERIFY_SSL, True)) as session:
@@ -164,7 +167,7 @@ async def _validate_input(data: dict) -> dict:
                 header_name="X-Api-Key-Unused",  # SABnzbd uses query param, not header
             )
             if err:
-                errors["sabnzbd"] = err
+                errors[CONF_SABNZBD_URL] = err
 
     return errors
 
@@ -250,6 +253,8 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Optional(CONF_SABNZBD_URL, default=current.get(CONF_SABNZBD_URL, "")): str,
                 vol.Optional(CONF_SABNZBD_API_KEY, default=current.get(CONF_SABNZBD_API_KEY, "")): str,
                 vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=current.get(CONF_SABNZBD_VERIFY_SSL, True)): bool,
+                # Access control
+                vol.Optional(CONF_ADMIN_ONLY, default=current.get(CONF_ADMIN_ONLY, False)): bool,
             }
         )
 

@@ -22,6 +22,9 @@
           },
           "sabnzbd": {
             "name": "SABnzbd"
+          },
+          "access_control": {
+            "name": "Access Control"
           }
         },
         "data": {
@@ -43,7 +46,8 @@
           "qbt_verify_ssl": "Verify SSL certificate",
           "sabnzbd_url": "SABnzbd URL",
           "sabnzbd_api_key": "SABnzbd API Key",
-          "sabnzbd_verify_ssl": "Verify SSL certificate"
+          "sabnzbd_verify_ssl": "Verify SSL certificate",
+          "admin_only": "Allow admin access only"
         },
         "data_description": {
           "radarr_url": "e.g. http://192.168.1.10:7878",
@@ -51,13 +55,14 @@
           "seerr_url": "e.g. http://192.168.1.10:5055",
           "bazarr_url": "e.g. http://192.168.1.10:6767",
           "qbt_url": "e.g. http://192.168.1.10:8080",
-          "sabnzbd_url": "e.g. http://192.168.1.10:8080"
+          "sabnzbd_url": "e.g. http://192.168.1.10:8080",
+          "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to {service}. Check the URL and API key.",
-      "invalid_auth": "Invalid credentials for {service}.",
+      "cannot_connect": "Failed to connect. Check the URL and network.",
+      "invalid_auth": "Invalid credentials.",
       "unknown": "An unexpected error occurred."
     },
     "abort": {
@@ -68,6 +73,29 @@
     "step": {
       "init": {
         "title": "Update Harr Settings",
+        "sections": {
+          "radarr": {
+            "name": "Radarr (Movies)"
+          },
+          "sonarr": {
+            "name": "Sonarr (TV Shows)"
+          },
+          "seerr": {
+            "name": "Seerr (Requests)"
+          },
+          "bazarr": {
+            "name": "Bazarr (Subtitles)"
+          },
+          "qbittorrent": {
+            "name": "qBittorrent"
+          },
+          "sabnzbd": {
+            "name": "SABnzbd"
+          },
+          "access_control": {
+            "name": "Access Control"
+          }
+        },
         "data": {
           "radarr_url": "Radarr URL",
           "radarr_api_key": "Radarr API Key",
@@ -87,7 +115,11 @@
           "qbt_verify_ssl": "Verify SSL certificate",
           "sabnzbd_url": "SABnzbd URL",
           "sabnzbd_api_key": "SABnzbd API Key",
-          "sabnzbd_verify_ssl": "Verify SSL certificate"
+          "sabnzbd_verify_ssl": "Verify SSL certificate",
+          "admin_only": "Allow admin access only"
+        },
+        "data_description": {
+          "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
         }
       }
     }

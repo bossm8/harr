@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    CONF_ADMIN_ONLY,
     CONF_RADARR_URL, CONF_RADARR_API_KEY, CONF_RADARR_VERIFY_SSL,
     CONF_SONARR_URL, CONF_SONARR_API_KEY, CONF_SONARR_VERIFY_SSL,
     CONF_SEERR_URL, CONF_SEERR_API_KEY, CONF_SEERR_VERIFY_SSL,
@@ -71,6 +72,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional("bazarr"):      _SERVICE_SCHEMA_API_KEY,
                 vol.Optional("qbittorrent"): _SERVICE_SCHEMA_QBT,
                 vol.Optional("sabnzbd"):     _SERVICE_SCHEMA_API_KEY,
+                vol.Optional("admin_only", default=False): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA,
         )
@@ -109,6 +111,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         CONF_SABNZBD_URL:        _svc("sabnzbd").get("url", ""),
         CONF_SABNZBD_API_KEY:    _svc("sabnzbd").get("api_key", ""),
         CONF_SABNZBD_VERIFY_SSL: _svc("sabnzbd").get("verify_ssl", True),
+        CONF_ADMIN_ONLY:         yaml.get("admin_only", False),
     }
 
     existing = hass.config_entries.async_entries(DOMAIN)
@@ -159,7 +162,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             sidebar_icon="mdi:movie-open",
             frontend_url_path="harr",
             module_url=PANEL_URL,
-            require_admin=False,
+            require_admin=bool(entry.data.get(CONF_ADMIN_ONLY, False)),
             config={},
         )
 
