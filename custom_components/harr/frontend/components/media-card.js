@@ -343,6 +343,17 @@ const CARD_STYLES = `
     border-top: 1px solid rgba(255,255,255,0.08);
     margin-top: 6px;
   }
+
+  .release-date-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--primary-text-color, #e1e1e1);
+  }
+  .release-date-label { color: var(--harr-text-secondary, #9e9e9e); }
+  .release-dates-block { margin-bottom: 16px; }
   .sub-langs { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 0 10px; }
   .sub-lang {
     display: inline-flex;
@@ -633,6 +644,25 @@ class HarrMediaCard extends HTMLElement {
       ? `<div class="genre-pills">${genres.map((g) => `<span class="genre-pill">${_esc(g)}</span>`).join("")}</div>`
       : "";
 
+    const _fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    const datePairs = this._service === "radarr"
+      ? [
+          { label: "Cinema",   val: raw.inCinemas      },
+          { label: "Digital",  val: raw.digitalRelease  },
+          { label: "Physical", val: raw.physicalRelease },
+        ].filter(d => d.val)
+      : [
+          { label: "First Aired", val: raw.firstAired  },
+          { label: "Last Aired",  val: raw.lastAired   },
+          { label: "Next Airing", val: raw.nextAiring  },
+        ].filter(d => d.val);
+    const releaseDatesHtml = datePairs.length
+      ? `<div class="section-divider">${this._service === "radarr" ? "Release Dates" : "Air Dates"}</div>
+         <div class="release-dates-block">${datePairs.map(({ label, val }) =>
+           `<div class="release-date-row"><span class="release-date-label">${label}</span><span>${_fmtDate(val)}</span></div>`
+         ).join("")}</div>`
+      : "";
+
     const overlay = document.createElement("div");
     overlay.className = "modal-overlay";
     overlay.innerHTML = `
@@ -643,6 +673,7 @@ class HarrMediaCard extends HTMLElement {
           <p class="manage-overview">${_esc(raw.overview || "")}</p>
         </div>
         ${genreHtml}
+        ${releaseDatesHtml}
         <div id="manage-body">
           <div class="modal-loading"><div class="spinner"></div> Loading profiles…</div>
         </div>
@@ -888,6 +919,10 @@ class HarrMediaCard extends HTMLElement {
           }
         }
 
+        const airDateHtml = ep.airDateUtc
+          ? `<div class="ep-card-meta" style="color:var(--harr-text-secondary,#9e9e9e);font-size:11px">${new Date(ep.airDateUtc).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</div>`
+          : "";
+
         epCards += `
           <div class="ep-card">
             <div class="ep-card-header">
@@ -896,6 +931,7 @@ class HarrMediaCard extends HTMLElement {
               ${fileIcon}
               <button class="btn-subtitle" data-epid="${ep.id}" style="padding:2px 8px;font-size:11px">Search</button>
             </div>
+            ${airDateHtml}
             ${metaHtml}
             ${subsHtml}
           </div>`;

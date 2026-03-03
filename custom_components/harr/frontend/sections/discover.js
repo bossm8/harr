@@ -194,6 +194,21 @@ class HarrDiscover extends BaseSection {
     const avail = AVAILABILITY[raw.mediaInfo?.status ?? 0];
     const rating = raw.voteAverage ? `⭐ ${Number(raw.voteAverage).toFixed(1)}/10` : "";
     const genres = (raw.genres || []).map((g) => g.name).join(", ");
+
+    const _fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    const datePairs = [
+      raw.releaseDate  ? { label: "Release",   val: raw.releaseDate  } : null,
+      raw.firstAirDate ? { label: "First Air", val: raw.firstAirDate } : null,
+      raw.lastAirDate  ? { label: "Last Air",  val: raw.lastAirDate  } : null,
+    ].filter(Boolean);
+    const datesHtml = datePairs.length
+      ? `<div style="font-size:12px;margin-bottom:10px">${datePairs.map(({ label, val }) =>
+          `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+             <span style="color:var(--harr-text-secondary,#9e9e9e)">${label}</span>
+             <span>${_fmtDate(val)}</span>
+           </div>`
+        ).join("")}</div>`
+      : "";
     const mediaUrl = raw.mediaInfo?.mediaUrl || "";
     const reqInfo = (() => {
       const r = raw.mediaInfo?.requests?.[0];
@@ -225,6 +240,7 @@ class HarrDiscover extends BaseSection {
           ${rating ? `<span style="color:#e5a00d">${_esc(rating)}</span>` : ""}
           ${genres  ? `<span style="color:var(--harr-text-secondary)">${_esc(genres)}</span>` : ""}
         </div>` : ""}
+        ${datesHtml}
         ${reqInfo ? `<div style="font-size:12px;color:var(--harr-text-secondary);margin-bottom:10px">${reqInfo}</div>` : ""}
         ${alreadyAvailable ? `<div style="color:#4caf50;font-size:13px;margin-bottom:12px">✓ Already available</div>` : ""}
         ${alreadyRequested ? `<div style="color:#ff9800;font-size:13px;margin-bottom:12px">⏳ Already requested / processing</div>` : ""}

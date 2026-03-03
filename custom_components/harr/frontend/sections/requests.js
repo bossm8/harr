@@ -34,21 +34,87 @@ class HarrRequests extends BaseSection {
   }
 
   _render() {
+    const activeLabel = SUB_TABS.find(t => t.id === this._activeTab)?.label || "";
     this.shadowRoot.innerHTML = `
-      <style>${SECTION_STYLES}</style>
+      <style>
+        ${SECTION_STYLES}
+        .sub-tab-mobile {
+          display: none; position: relative;
+          align-items: center; justify-content: space-between;
+          padding: 8px 12px; flex-shrink: 0;
+          background: var(--harr-card-bg, #1c1c1c);
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sub-tab-current { font-size: 13px; font-weight: 600; color: var(--harr-accent, #e5a00d); }
+        .sub-tab-toggle {
+          background: none; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+          color: var(--primary-text-color, #e1e1e1); font-size: 16px; cursor: pointer;
+          padding: 3px 8px; line-height: 1;
+        }
+        .sub-tab-dropdown {
+          display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+          background: var(--harr-card-bg, #1c1c1c);
+          border: 1px solid rgba(255,255,255,0.12); border-radius: 0 0 8px 8px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .sub-tab-dropdown.open { display: block; }
+        .sub-tab-option {
+          padding: 12px 16px; font-size: 14px; cursor: pointer;
+          color: var(--primary-text-color, #e1e1e1);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .sub-tab-option:last-child { border-bottom: none; }
+        .sub-tab-option.active { color: var(--harr-accent, #e5a00d); font-weight: 600; }
+        @media (max-width: 480px) {
+          .sub-tabs { display: none; }
+          .sub-tab-mobile { display: flex; }
+        }
+      </style>
       <div class="sub-tabs">
         ${SUB_TABS.map((t) => `<div class="sub-tab${t.id === this._activeTab ? " active" : ""}" data-tab="${t.id}">${t.label}</div>`).join("")}
+      </div>
+      <div class="sub-tab-mobile" id="stm">
+        <span class="sub-tab-current" id="stm-label">${activeLabel}</span>
+        <button class="sub-tab-toggle" id="stm-toggle">&#9776;</button>
+        <div class="sub-tab-dropdown" id="stm-dropdown">
+          ${SUB_TABS.map(t => `<div class="sub-tab-option${t.id === this._activeTab ? " active" : ""}" data-tab="${t.id}">${t.label}</div>`).join("")}
+        </div>
       </div>
       <div class="content" id="content">
         <div class="list" id="list"></div>
       </div>
     `;
 
-    this.shadowRoot.querySelectorAll(".sub-tab").forEach((btn) => {
+    const shadow = this.shadowRoot;
+
+    shadow.querySelectorAll(".sub-tab").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (btn.dataset.tab === this._activeTab) return;
         this._activeTab = btn.dataset.tab;
-        this.shadowRoot.querySelectorAll(".sub-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === this._activeTab));
+        shadow.querySelectorAll(".sub-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === this._activeTab));
+        this._offset = 0;
+        this._load();
+      });
+    });
+
+    shadow.getElementById("stm-toggle").addEventListener("click", (e) => {
+      e.stopPropagation();
+      shadow.getElementById("stm-dropdown").classList.toggle("open");
+    });
+
+    shadow.addEventListener("click", () =>
+      shadow.getElementById("stm-dropdown")?.classList.remove("open"));
+
+    shadow.querySelectorAll(".sub-tab-option").forEach(opt => {
+      opt.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const tab = opt.dataset.tab;
+        if (tab === this._activeTab) { shadow.getElementById("stm-dropdown").classList.remove("open"); return; }
+        this._activeTab = tab;
+        shadow.getElementById("stm-label").textContent = SUB_TABS.find(t => t.id === tab)?.label || tab;
+        shadow.querySelectorAll(".sub-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+        shadow.querySelectorAll(".sub-tab-option").forEach(o => o.classList.toggle("active", o.dataset.tab === tab));
+        shadow.getElementById("stm-dropdown").classList.remove("open");
         this._offset = 0;
         this._load();
       });

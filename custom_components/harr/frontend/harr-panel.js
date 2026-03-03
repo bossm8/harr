@@ -155,10 +155,14 @@ const STYLES = `
   /* ── Mobile ── */
   @media (max-width: 480px) {
     :host {
-      /* 2 poster columns: (viewport - 2×8px content-padding - 16px gap) / 2 */
+      /* 2 poster columns: (viewport - 2x8px content-padding - 16px gap) / 2 */
       --harr-poster-width: calc((100vw - 40px) / 2);
     }
     .tab { padding: 10px 12px; font-size: 13px; }
+  }
+
+  @media (min-width: 871px) {
+    .ha-header-menu { display: none; }
   }
 `;
 

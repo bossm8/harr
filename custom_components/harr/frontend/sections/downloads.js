@@ -291,7 +291,7 @@ class HarrDownloads extends BaseSection {
         speed: t.dlspeed,
         eta: t.eta > 0 && t.eta < 8640000 ? _fmtEta(t.eta) : null,
         status: _qbtState(t.state),
-        paused: t.state?.includes("paused") || t.state === "stoppedDL",
+        paused: t.state?.includes("paused") || t.state === "stoppedDL" || t.state === "stoppedUP",
         hash: t.hash,
         client: "qbt",
       }));
@@ -370,12 +370,20 @@ class HarrDownloads extends BaseSection {
   async _pauseResume(item) {
     try {
       if (item.client === "qbt") {
-        const action = item.paused ? "resume" : "pause";
-        await harrFetch(this._hass, `${QBT_BASE}/api/v2/torrents/${action}`, {
+        // qBittorrent 5.x uses stop/start; 4.x used pause/resume — try 5.x first
+        const [v5, v4] = item.paused ? ["start", "resume"] : ["stop", "pause"];
+        const opts = {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: `hashes=${item.hash}`,
-        });
+        };
+        try {
+          await harrFetch(this._hass, `${QBT_BASE}/api/v2/torrents/${v5}`, opts);
+        } catch (e) {
+          if (!e.message.includes("404") && !e.message.toLowerCase().includes("not found")) throw e;
+          // qBittorrent < 5.x uses the old endpoint names
+          await harrFetch(this._hass, `${QBT_BASE}/api/v2/torrents/${v4}`, opts);
+        }
       } else {
         const sabAction = item.paused ? "resume" : "pause";
         await harrFetch(this._hass, `${SAB_BASE}/api?mode=queue&name=${sabAction}&value=${item.nzoId}&output=json`);
