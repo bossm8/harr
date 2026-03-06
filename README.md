@@ -231,12 +231,23 @@ All API calls go through HA's HTTP server, so:
 
 ## Preview
 
+### Desktop
+
 ![Discover](./assets/discover.png)
+---
 ![Calenar](./assets/calendar.png)
+---
 ![Detail](./assets/detail.png)
+---
 ![Requests](./assets/requests.png)
+---
 ![Downloads](./assets/downloads.png)
-![Mobile](./assets/mobile.png)
+
+### Mobile
+
+|           |           |
+|-|-|
+| ![Mobile](./assets/mobile-1.png) | ![Mobile](./assets/mobile-2.png) |
 
 ---
 
