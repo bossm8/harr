@@ -249,6 +249,7 @@ class HarrDiscover extends BaseSection {
         ${alreadyRequested ? `<div style="color:#ff9800;font-size:13px;margin-bottom:12px">Requested / Processing</div>` : ""}
         <div id="request-options" style="display:none"></div>
         <div class="modal-actions">
+          ${(alreadyAvailable || alreadyPartial) ? `<button class="btn-secondary" id="nav-btn">${_esc(navLabel)}</button>` : ""}
           ${mediaUrl ? `<a href="${_esc(mediaUrl)}" target="_blank" style="
             display:inline-flex;align-items:center;gap:6px;
             padding:8px 16px;border-radius:8px;
@@ -256,7 +257,6 @@ class HarrDiscover extends BaseSection {
             color:var(--primary-text-color,#e1e1e1);font-size:13px;font-weight:600;
             text-decoration:none;margin-right:auto">▶ Watch in Jellyfin</a>` : ""}
           <button class="btn-secondary" id="cancel-btn">Close</button>
-          ${(alreadyAvailable || alreadyPartial) ? `<button class="btn-secondary" id="nav-btn">${_esc(navLabel)}</button>` : ""}
           ${!alreadyAvailable && !alreadyPartial && !alreadyRequested ? `<button class="btn-primary" id="request-btn">Request</button>` : ""}
         </div>
       </div>
