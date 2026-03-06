@@ -15,6 +15,7 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import (
     CONF_ADMIN_ONLY,
+    CONF_IMAGE_CACHE_DISK,
     CONF_RADARR_URL, CONF_RADARR_API_KEY, CONF_RADARR_VERIFY_SSL,
     CONF_SONARR_URL, CONF_SONARR_API_KEY, CONF_SONARR_VERIFY_SSL,
     CONF_SEERR_URL, CONF_SEERR_API_KEY, CONF_SEERR_VERIFY_SSL,
@@ -30,6 +31,7 @@ from .views.bazarr import BazarrProxyView
 from .views.qbittorrent import QBittorrentProxyView
 from .views.sabnzbd import SABnzbdProxyView
 from .views.config import HarrConfigView
+from .views.image import ImageProxyView
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,6 +75,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional("qbittorrent"): _SERVICE_SCHEMA_QBT,
                 vol.Optional("sabnzbd"):     _SERVICE_SCHEMA_API_KEY,
                 vol.Optional("admin_only", default=False): cv.boolean,
+                vol.Optional("image_cache_disk", default=False): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA,
         )
@@ -112,6 +115,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         CONF_SABNZBD_API_KEY:    _svc("sabnzbd").get("api_key", ""),
         CONF_SABNZBD_VERIFY_SSL: _svc("sabnzbd").get("verify_ssl", True),
         CONF_ADMIN_ONLY:         yaml.get("admin_only", False),
+        CONF_IMAGE_CACHE_DISK:   yaml.get("image_cache_disk", False),
     }
 
     existing = hass.config_entries.async_entries(DOMAIN)
@@ -135,6 +139,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN] = dict(entry.data)
 
+    configured = [
+        svc for svc, key in [
+            ("radarr", CONF_RADARR_URL), ("sonarr", CONF_SONARR_URL),
+            ("seerr", CONF_SEERR_URL), ("bazarr", CONF_BAZARR_URL),
+            ("qbittorrent", CONF_QBT_URL), ("sabnzbd", CONF_SABNZBD_URL),
+        ] if entry.data.get(key)
+    ]
+    _LOGGER.debug("Setting up harr — configured services: %s", configured or ["none"])
+
     # Static paths and views: register once per process lifetime (no removal API)
     if not hass.data.get(_HTTP_REGISTERED_KEY):
         await hass.http.async_register_static_paths(
@@ -149,10 +162,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             QBittorrentProxyView,
             SABnzbdProxyView,
             HarrConfigView,
+            ImageProxyView,
         ]:
             hass.http.register_view(view_class)
 
         hass.data[_HTTP_REGISTERED_KEY] = True
+        _LOGGER.debug("Registered static path %s and HTTP views", FRONTEND_URL)
 
     # Panel: remove then re-register on every setup so require_admin reflects
     # the current config without needing a full HA restart.
@@ -168,6 +183,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         config={},
     )
 
+    _LOGGER.debug(
+        "Registered harr panel (admin_only=%s)",
+        bool(entry.data.get(CONF_ADMIN_ONLY, False)),
+    )
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 
@@ -179,6 +198,7 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    _LOGGER.debug("Unloading harr entry")
     async_remove_panel(hass, "harr", warn_if_unknown=False)
     hass.data.pop(DOMAIN, None)
     return True

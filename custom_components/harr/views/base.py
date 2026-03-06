@@ -9,7 +9,7 @@ from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadGateway, HTTPServiceUnavailable
 
 from homeassistant.components.http import HomeAssistantView, KEY_HASS_USER
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from ..const import CONF_ADMIN_ONLY, DOMAIN
 
@@ -57,6 +57,10 @@ class GenericProxyView(HomeAssistantView):
         if config.get(CONF_ADMIN_ONLY):
             user = request.get(KEY_HASS_USER)
             if not user or not user.is_admin:
+                _LOGGER.debug(
+                    "Admin-only: denied %s %s (user=%s)",
+                    method, request.path, getattr(user, "name", "anonymous"),
+                )
                 return web.Response(
                     status=403,
                     content_type="application/json",
@@ -84,7 +88,8 @@ class GenericProxyView(HomeAssistantView):
             headers["Content-Type"] = request.content_type
         headers.update(self._build_headers(config))
 
-        session = async_create_clientsession(hass, verify_ssl=verify_ssl)
+        _LOGGER.debug("Proxying %s %s", method, target_url)
+        session = async_get_clientsession(hass, verify_ssl=verify_ssl)
         try:
             async with session.request(
                 method,
@@ -97,6 +102,10 @@ class GenericProxyView(HomeAssistantView):
             ) as upstream:
                 content_type = upstream.content_type or "application/json"
                 response_body = await upstream.read()
+                _LOGGER.debug(
+                    "%s %s → %d (%d bytes, %s)",
+                    method, target_url, upstream.status, len(response_body), content_type,
+                )
                 return web.Response(
                     status=upstream.status,
                     body=response_body,
@@ -116,8 +125,6 @@ class GenericProxyView(HomeAssistantView):
                 content_type="application/json",
                 text=f'{{"error": "Proxy error: {err}"}}',
             )
-        finally:
-            await session.close()
 
     async def get(self, request: web.Request, path: str = "") -> web.Response:
         return await self._proxy(request, path, "GET")

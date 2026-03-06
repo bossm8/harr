@@ -38,3 +38,6 @@ DATA_QBT_COOKIE = "qbt_cookie"
 
 # Access control
 CONF_ADMIN_ONLY = "admin_only"
+
+# Image cache
+CONF_IMAGE_CACHE_DISK = "image_cache_disk"

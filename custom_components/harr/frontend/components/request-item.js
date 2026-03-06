@@ -10,6 +10,8 @@
  *   harr-request-decline — decline clicked
  */
 
+import { proxyImageUrl } from "../sections/_base-section.js";
+
 // Media availability status (item.media.status) — matches discover.js AVAILABILITY
 const MEDIA_STATUS_MAP = {
   1: { label: "Unknown",             color: "#9e9e9e" },
@@ -180,7 +182,7 @@ class HarrRequestItem extends HTMLElement {
           : REQUEST_STATUS_MAP[item.status] || { label: String(item.status), color: "#9e9e9e" });
 
     const posterPath = detail.posterPath;
-    const posterUrl  = posterPath ? `https://image.tmdb.org/t/p/w92${posterPath}` : null;
+    const posterUrl  = posterPath ? proxyImageUrl(`https://image.tmdb.org/t/p/w92${posterPath}`) : null;
 
     const requesterAvatar = item.requestedBy?.avatar;
     const showReqAvatar   = requesterAvatar?.startsWith("http");

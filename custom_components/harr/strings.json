@@ -80,6 +80,15 @@
             "data_description": {
               "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
             }
+          },
+          "performance": {
+            "name": "Performance",
+            "data": {
+              "image_cache_disk": "Enable persistent image cache"
+            },
+            "data_description": {
+              "image_cache_disk": "Store poster images on disk so they survive HA restarts. Images are re-checked against upstream every 7 days and updated if a newer version is available. Cache stored in .storage/harr/image_cache/."
+            }
           }
         }
       }
@@ -172,6 +181,15 @@
             },
             "data_description": {
               "admin_only": "When enabled, only HA admin users can see the Harr sidebar panel and call its API endpoints. Requires a restart to update the sidebar visibility."
+            }
+          },
+          "performance": {
+            "name": "Performance",
+            "data": {
+              "image_cache_disk": "Enable persistent image cache"
+            },
+            "data_description": {
+              "image_cache_disk": "Store poster images on disk so they survive HA restarts. Images are re-checked against upstream every 7 days and updated if a newer version is available. Cache stored in .storage/harr/image_cache/."
             }
           }
         }

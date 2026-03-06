@@ -3,7 +3,7 @@
  * Mirrors the movies section: library grid + add show modal with profiles.
  */
 
-import { BaseSection, SECTION_STYLES, EXTRA_STYLES, harrFetch } from "./_base-section.js";
+import { BaseSection, SECTION_STYLES, EXTRA_STYLES, harrFetch, proxyImageUrl } from "./_base-section.js";
 import "../components/media-card.js";
 
 const BASE = "/api/harr/sonarr";
@@ -79,7 +79,7 @@ class HarrShows extends BaseSection {
 
     for (const show of series) {
       const poster = show.images?.find((i) => i.coverType === "poster");
-      const posterUrl = poster?.remoteUrl || poster?.url || null;
+      const posterUrl = proxyImageUrl(poster?.remoteUrl || poster?.url || null);
       const fileCount  = show.statistics?.episodeFileCount  || 0;
       const totalCount = show.statistics?.totalEpisodeCount || 0;
       const downloadStatus = fileCount === 0
@@ -195,7 +195,7 @@ class HarrShows extends BaseSection {
 
     const resultItemsHtml = results.map((s, i) => {
       const poster = s.images?.find((img) => img.coverType === "poster");
-      const posterUrl = poster?.remoteUrl || poster?.url || null;
+      const posterUrl = proxyImageUrl(poster?.remoteUrl || poster?.url || null);
       const posterHtml = posterUrl
         ? `<img class="result-poster" src="${_esc(posterUrl)}" alt="${_esc(s.title)}" loading="lazy">`
         : `<div class="result-poster-ph">📺</div>`;

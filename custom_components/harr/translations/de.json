@@ -1,0 +1,199 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Harr konfigurieren",
+        "description": "Verbindungsdetails für jeden Dienst eingeben. URL leer lassen, um einen Dienst zu deaktivieren.",
+        "sections": {
+          "radarr": {
+            "name": "Radarr (Filme)",
+            "data": {
+              "radarr_url": "Radarr-URL",
+              "radarr_api_key": "Radarr API-Schlüssel",
+              "radarr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "radarr_url": "z. B. http://192.168.1.10:7878"
+            }
+          },
+          "sonarr": {
+            "name": "Sonarr (Serien)",
+            "data": {
+              "sonarr_url": "Sonarr-URL",
+              "sonarr_api_key": "Sonarr API-Schlüssel",
+              "sonarr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "sonarr_url": "z. B. http://192.168.1.10:8989"
+            }
+          },
+          "seerr": {
+            "name": "Seerr (Anfragen)",
+            "data": {
+              "seerr_url": "Seerr-URL",
+              "seerr_api_key": "Seerr API-Schlüssel",
+              "seerr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "seerr_url": "z. B. http://192.168.1.10:5055"
+            }
+          },
+          "bazarr": {
+            "name": "Bazarr (Untertitel)",
+            "data": {
+              "bazarr_url": "Bazarr-URL",
+              "bazarr_api_key": "Bazarr API-Schlüssel",
+              "bazarr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "bazarr_url": "z. B. http://192.168.1.10:6767"
+            }
+          },
+          "qbittorrent": {
+            "name": "qBittorrent",
+            "data": {
+              "qbt_url": "qBittorrent-URL",
+              "qbt_username": "Benutzername",
+              "qbt_password": "Passwort",
+              "qbt_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "qbt_url": "z. B. http://192.168.1.10:8080"
+            }
+          },
+          "sabnzbd": {
+            "name": "SABnzbd",
+            "data": {
+              "sabnzbd_url": "SABnzbd-URL",
+              "sabnzbd_api_key": "SABnzbd API-Schlüssel",
+              "sabnzbd_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "sabnzbd_url": "z. B. http://192.168.1.10:8080"
+            }
+          },
+          "access_control": {
+            "name": "Zugriffssteuerung",
+            "data": {
+              "admin_only": "Nur Administratoren erlauben"
+            },
+            "data_description": {
+              "admin_only": "Wenn aktiviert, können nur HA-Administratoren das Harr-Seitenleistenpanel sehen und dessen API-Endpunkte aufrufen. Erfordert einen Neustart, um die Sichtbarkeit in der Seitenleiste zu aktualisieren."
+            }
+          },
+          "performance": {
+            "name": "Leistung",
+            "data": {
+              "image_cache_disk": "Persistenten Bild-Cache aktivieren"
+            },
+            "data_description": {
+              "image_cache_disk": "Poster-Bilder auf der Festplatte speichern, damit sie HA-Neustarts überdauern. Bilder werden alle 7 Tage gegen die Quelle geprüft und bei Bedarf aktualisiert. Cache gespeichert in .storage/harr/image_cache/."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen. URL und Netzwerk prüfen.",
+      "invalid_auth": "Ungültige Anmeldedaten.",
+      "unknown": "Ein unerwarteter Fehler ist aufgetreten."
+    },
+    "abort": {
+      "already_configured": "Harr ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Harr-Einstellungen aktualisieren",
+        "sections": {
+          "radarr": {
+            "name": "Radarr (Filme)",
+            "data": {
+              "radarr_url": "Radarr-URL",
+              "radarr_api_key": "Radarr API-Schlüssel",
+              "radarr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "radarr_url": "z. B. http://192.168.1.10:7878"
+            }
+          },
+          "sonarr": {
+            "name": "Sonarr (Serien)",
+            "data": {
+              "sonarr_url": "Sonarr-URL",
+              "sonarr_api_key": "Sonarr API-Schlüssel",
+              "sonarr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "sonarr_url": "z. B. http://192.168.1.10:8989"
+            }
+          },
+          "seerr": {
+            "name": "Seerr (Anfragen)",
+            "data": {
+              "seerr_url": "Seerr-URL",
+              "seerr_api_key": "Seerr API-Schlüssel",
+              "seerr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "seerr_url": "z. B. http://192.168.1.10:5055"
+            }
+          },
+          "bazarr": {
+            "name": "Bazarr (Untertitel)",
+            "data": {
+              "bazarr_url": "Bazarr-URL",
+              "bazarr_api_key": "Bazarr API-Schlüssel",
+              "bazarr_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "bazarr_url": "z. B. http://192.168.1.10:6767"
+            }
+          },
+          "qbittorrent": {
+            "name": "qBittorrent",
+            "data": {
+              "qbt_url": "qBittorrent-URL",
+              "qbt_username": "Benutzername",
+              "qbt_password": "Passwort",
+              "qbt_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "qbt_url": "z. B. http://192.168.1.10:8080"
+            }
+          },
+          "sabnzbd": {
+            "name": "SABnzbd",
+            "data": {
+              "sabnzbd_url": "SABnzbd-URL",
+              "sabnzbd_api_key": "SABnzbd API-Schlüssel",
+              "sabnzbd_verify_ssl": "SSL-Zertifikat überprüfen"
+            },
+            "data_description": {
+              "sabnzbd_url": "z. B. http://192.168.1.10:8080"
+            }
+          },
+          "access_control": {
+            "name": "Zugriffssteuerung",
+            "data": {
+              "admin_only": "Nur Administratoren erlauben"
+            },
+            "data_description": {
+              "admin_only": "Wenn aktiviert, können nur HA-Administratoren das Harr-Seitenleistenpanel sehen und dessen API-Endpunkte aufrufen. Erfordert einen Neustart, um die Sichtbarkeit in der Seitenleiste zu aktualisieren."
+            }
+          },
+          "performance": {
+            "name": "Leistung",
+            "data": {
+              "image_cache_disk": "Persistenten Bild-Cache aktivieren"
+            },
+            "data_description": {
+              "image_cache_disk": "Poster-Bilder auf der Festplatte speichern, damit sie HA-Neustarts überdauern. Bilder werden alle 7 Tage gegen die Quelle geprüft und bei Bedarf aktualisiert. Cache gespeichert in .storage/harr/image_cache/."
+            }
+          }
+        }
+      }
+    }
+  }
+}

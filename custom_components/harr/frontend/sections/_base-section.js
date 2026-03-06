@@ -419,6 +419,16 @@ let _harrConfigInflight = null;
  * Returns { radarr: bool, sonarr: bool, seerr: bool, bazarr: bool,
  *           qbittorrent: bool, sabnzbd: bool }
  */
+/**
+ * Route a poster image URL through the HA image cache proxy at /api/harr/image.
+ * The proxy caches responses server-side so subsequent loads skip the CDN entirely.
+ * Requires an absolute URL (e.g. TMDB CDN remoteUrl — not a Radarr/Sonarr relative path).
+ */
+export function proxyImageUrl(rawUrl) {
+  if (!rawUrl) return null;
+  return `/api/harr/image?url=${encodeURIComponent(rawUrl)}`;
+}
+
 export async function getHarrConfig(hass) {
   if (_harrConfigCache) return _harrConfigCache;
   if (!_harrConfigInflight) {

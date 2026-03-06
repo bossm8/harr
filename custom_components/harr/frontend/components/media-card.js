@@ -12,7 +12,7 @@
  *   harr-manage-done — fired (bubbling) after a successful save or delete
  */
 
-import { harrFetch, getHarrConfig } from "../sections/_base-section.js";
+import { harrFetch, getHarrConfig, proxyImageUrl } from "../sections/_base-section.js";
 
 const SERVICE_CONFIG = {
   radarr: {
@@ -32,6 +32,18 @@ const SERVICE_CONFIG = {
     bazarrSearch: (id) => `/api/harr/bazarr/api/series?seriesid=${id}&action=search-missing`,
   },
 };
+
+const SONARR_MONITOR_MODES = [
+  { value: "",         label: "(no change)"      },
+  { value: "all",      label: "All Episodes"     },
+  { value: "future",   label: "Future Episodes"  },
+  { value: "missing",  label: "Missing Episodes" },
+  { value: "existing", label: "Existing Episodes"},
+  { value: "pilot",    label: "Pilot Episode"    },
+  { value: "first",    label: "First Season"     },
+  { value: "latest",   label: "Latest Season"    },
+  { value: "none",     label: "None"             },
+];
 
 const STATUS_COLORS = {
   available:          "#4caf50",
@@ -369,9 +381,30 @@ const CARD_STYLES = `
     border: 1px solid rgba(76,175,80,0.3);
   }
   .sub-lang.missing {
-    background: rgba(229,160,13,0.12);
-    color: var(--harr-accent, #e5a00d);
-    border: 1px solid rgba(229,160,13,0.3);
+    background: rgba(255,255,255,0.06);
+    color: var(--harr-text-secondary, #9e9e9e);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .sub-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0 10px;
+  }
+  .sub-header .sub-langs {
+    flex: 1;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .sub-header .btn-subtitle {
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+  @media (max-width: 480px) {
+    .sub-header { flex-direction: column; }
+    .sub-header .btn-subtitle { width: 100%; }
   }
   .genre-pills { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 0 12px; }
   .genre-pill {
@@ -471,7 +504,7 @@ const CARD_STYLES = `
     font-weight: 600;
   }
   .ep-sub-chip.have    { background: rgba(76,175,80,0.15);   color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
-  .ep-sub-chip.missing { background: rgba(229,160,13,0.12);  color: #e5a00d; border: 1px solid rgba(229,160,13,0.3); }
+  .ep-sub-chip.missing { background: rgba(255,255,255,0.06); color: var(--harr-text-secondary,#9e9e9e); border: 1px solid rgba(255,255,255,0.15); }
 
   /* ── Mobile ── */
   @media (max-width: 480px) {
@@ -520,6 +553,33 @@ const CARD_STYLES = `
     word-break: break-all;
     line-height: 1.3;
   }
+
+  .ep-mon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    padding: 0 2px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .ep-mon-btn.monitored { color: #4caf50; }
+
+  .mon-indicator {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    color: var(--harr-text-secondary, #9e9e9e);
+  }
+  .mon-indicator:hover { background: rgba(255,255,255,0.08); }
+  .mon-indicator.monitored { color: #4caf50; }
 `;
 
 class HarrMediaCard extends HTMLElement {
@@ -634,7 +694,7 @@ class HarrMediaCard extends HTMLElement {
     if (!cfg) return;
 
     const poster = raw.images?.find((i) => i.coverType === "poster");
-    const posterUrl = poster?.remoteUrl || poster?.url || null;
+    const posterUrl = proxyImageUrl(poster?.remoteUrl || poster?.url || null);
     const posterHtml = posterUrl
       ? `<img class="manage-poster" src="${_esc(posterUrl)}" alt="${_esc(raw.title)}" loading="lazy">`
       : `<div class="manage-poster-ph">${cfg.icon}</div>`;
@@ -703,13 +763,26 @@ class HarrMediaCard extends HTMLElement {
         <label>Quality Profile</label>
         <select id="qp-select">${profileOptions}</select>
       </div>
-      <div class="field">
-        <label>Monitor</label>
-        <select id="mon-select">
-          <option value="true"${raw.monitored ? " selected" : ""}>Yes</option>
-          <option value="false"${!raw.monitored ? " selected" : ""}>No</option>
-        </select>
-      </div>
+      ${isShow ? `
+        <div class="field">
+          <label>Monitored</label>
+          <select id="mon-select">
+            <option value="true"${raw.monitored ? " selected" : ""}>Yes</option>
+            <option value="false"${!raw.monitored ? " selected" : ""}>No</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Series Monitoring</label>
+          <select id="mon-mode-select">
+            ${SONARR_MONITOR_MODES.map(m => `<option value="${m.value}">${m.label}</option>`).join("")}
+          </select>
+        </div>` : `<div class="field">
+          <label>Monitor</label>
+          <select id="mon-select">
+            <option value="true"${raw.monitored ? " selected" : ""}>Yes</option>
+            <option value="false"${!raw.monitored ? " selected" : ""}>No</option>
+          </select>
+        </div>`}
       ${!isShow ? `<div id="file-section"></div>` : ""}
       ${isShow ? `<div id="episodes-section">
         <div class="section-divider">Episodes</div>
@@ -759,10 +832,114 @@ class HarrMediaCard extends HTMLElement {
       try {
         const qualityProfileId = parseInt(body.querySelector("#qp-select").value, 10);
         const monitored = body.querySelector("#mon-select").value === "true";
+        const monVal = isShow ? body.querySelector("#mon-mode-select").value : "";
+
+        // Fetch episodes first — needed for season computation AND episode monitor
+        const episodes = (isShow && monVal)
+          ? await harrFetch(this._hass, `${cfg.base}/api/v3/episode?seriesId=${raw.id}`)
+          : null;
+
+        const now = Date.now();
+
+        // Compute season monitored flags matching Sonarr's own behavior
+        let seasons = raw.seasons || [];
+        if (isShow && monVal && Array.isArray(episodes)) {
+          const nonSpecialEps = episodes.filter(ep => ep.seasonNumber > 0);
+          if (monVal === "none") {
+            seasons = seasons.map(s => ({ ...s, monitored: false }));
+          } else if (monVal === "all") {
+            seasons = seasons.map(s => ({ ...s, monitored: true }));
+          } else if (monVal === "pilot" || monVal === "first") {
+            seasons = seasons.map(s => ({ ...s, monitored: s.seasonNumber === 1 }));
+          } else if (monVal === "latest") {
+            const maxSeason = Math.max(0, ...seasons.filter(s => s.seasonNumber > 0).map(s => s.seasonNumber));
+            seasons = seasons.map(s => ({ ...s, monitored: s.seasonNumber > 0 && s.seasonNumber === maxSeason }));
+          } else if (monVal === "future") {
+            // Season monitored if it has at least one episode not yet aired
+            const hasFuture = new Set(
+              nonSpecialEps
+                .filter(ep => !ep.airDateUtc || new Date(ep.airDateUtc).getTime() > now)
+                .map(ep => ep.seasonNumber)
+            );
+            seasons = seasons.map(s => ({ ...s, monitored: hasFuture.has(s.seasonNumber) }));
+          } else if (monVal === "missing") {
+            // Season monitored if it has at least one episode without a file
+            const hasMissing = new Set(
+              nonSpecialEps.filter(ep => !ep.hasFile).map(ep => ep.seasonNumber)
+            );
+            seasons = seasons.map(s => ({ ...s, monitored: hasMissing.has(s.seasonNumber) }));
+          } else if (monVal === "existing") {
+            // Season monitored if it has at least one downloaded file
+            const hasFile = new Set(
+              nonSpecialEps.filter(ep => ep.hasFile).map(ep => ep.seasonNumber)
+            );
+            seasons = seasons.map(s => ({ ...s, monitored: hasFile.has(s.seasonNumber) }));
+          }
+        } else if (isShow && monVal) {
+          // Episode fetch failed — fallback for data-independent modes
+          if (monVal === "none") {
+            seasons = seasons.map(s => ({ ...s, monitored: false }));
+          } else if (monVal === "all") {
+            seasons = seasons.map(s => ({ ...s, monitored: true }));
+          } else if (monVal === "pilot" || monVal === "first") {
+            seasons = seasons.map(s => ({ ...s, monitored: s.seasonNumber === 1 }));
+          } else if (monVal === "latest") {
+            const maxSeason = Math.max(0, ...seasons.filter(s => s.seasonNumber > 0).map(s => s.seasonNumber));
+            seasons = seasons.map(s => ({ ...s, monitored: s.seasonNumber > 0 && s.seasonNumber === maxSeason }));
+          }
+        }
+
+        // Series/movie PUT — never send monitorNewItems (Sonarr only accepts "all"/"none" there)
         await harrFetch(this._hass, `${cfg.base}/api/v3/${cfg.itemPath}/${raw.id}`, {
           method: "PUT",
-          body: JSON.stringify({ ...raw, qualityProfileId, monitored }),
+          body: JSON.stringify({ ...raw, qualityProfileId, monitored, ...(isShow ? { seasons } : {}) }),
         });
+        // Keep raw.seasons in sync so the season Mon buttons reflect current state
+        if (isShow) raw.seasons = seasons;
+
+        // Retroactively apply monitor mode to existing episodes
+        if (isShow && monVal && Array.isArray(episodes)) {
+          const nonSpecials = episodes.filter(ep => ep.seasonNumber > 0);
+          let monitoredIds = [];
+          let unmonitoredIds = [];
+
+          if (monVal === "all") {
+            monitoredIds = nonSpecials.map(ep => ep.id);
+          } else if (monVal === "future") {
+            nonSpecials.forEach(ep => {
+              const aired = ep.airDateUtc && new Date(ep.airDateUtc).getTime() <= now;
+              (aired ? unmonitoredIds : monitoredIds).push(ep.id);
+            });
+          } else if (monVal === "missing") {
+            nonSpecials.forEach(ep => (ep.hasFile ? unmonitoredIds : monitoredIds).push(ep.id));
+          } else if (monVal === "existing") {
+            nonSpecials.forEach(ep => (ep.hasFile ? monitoredIds : unmonitoredIds).push(ep.id));
+          } else if (monVal === "pilot") {
+            nonSpecials.forEach(ep =>
+              (ep.seasonNumber === 1 && ep.episodeNumber === 1 ? monitoredIds : unmonitoredIds).push(ep.id));
+          } else if (monVal === "first") {
+            nonSpecials.forEach(ep => (ep.seasonNumber === 1 ? monitoredIds : unmonitoredIds).push(ep.id));
+          } else if (monVal === "latest") {
+            const maxSeason = Math.max(...nonSpecials.map(ep => ep.seasonNumber));
+            nonSpecials.forEach(ep =>
+              (ep.seasonNumber === maxSeason ? monitoredIds : unmonitoredIds).push(ep.id));
+          } else {
+            // "none" — unmonitor everything
+            unmonitoredIds = nonSpecials.map(ep => ep.id);
+          }
+
+          await Promise.all([
+            monitoredIds.length && harrFetch(this._hass, `${cfg.base}/api/v3/episode/monitor`, {
+              method: "PUT",
+              body: JSON.stringify({ episodeIds: monitoredIds, monitored: true }),
+            }),
+            unmonitoredIds.length && harrFetch(this._hass, `${cfg.base}/api/v3/episode/monitor`, {
+              method: "PUT",
+              body: JSON.stringify({ episodeIds: unmonitoredIds, monitored: false }),
+            }),
+          ].filter(Boolean));
+        }
+
         overlay.remove();
         this.dispatchEvent(new CustomEvent("harr-manage-done", { bubbles: true, composed: true }));
       } catch (err) {
@@ -929,6 +1106,7 @@ class HarrMediaCard extends HTMLElement {
               <span class="ep-num">E${num}</span>
               <span class="ep-title" title="${_esc(ep.title || "")}">${_esc(ep.title || "No title")}</span>
               ${fileIcon}
+              <button class="ep-mon-btn${ep.monitored ? ' monitored' : ''}" data-mon-ep="${ep.id}" data-monitored="${ep.monitored}" title="${ep.monitored ? 'Monitored — click to unmonitor' : 'Unmonitored — click to monitor'}">${ep.monitored ? '●' : '○'}</button>
               <button class="btn-subtitle" data-epid="${ep.id}" style="padding:2px 8px;font-size:11px">Search</button>
             </div>
             ${airDateHtml}
@@ -942,7 +1120,7 @@ class HarrMediaCard extends HTMLElement {
           <summary>
             ${_esc(label)}
             <span class="ep-season-count">${downloaded} / ${eps.length}</span>
-            <button class="btn-subtitle" data-monitor-season="${seasonNum}" data-monitored="${isMonitored}" style="padding:2px 8px;font-size:11px;color:${monColor}">${monLabel}</button>
+            <button class="mon-indicator${isMonitored ? ' monitored' : ''}" data-monitor-season="${seasonNum}" data-monitored="${isMonitored}" title="Toggle season monitoring">${monLabel}</button>
             <button class="btn-subtitle" data-season="${seasonNum}" style="padding:2px 8px;font-size:11px">Search</button>
           </summary>
           ${epCards}
@@ -975,7 +1153,7 @@ class HarrMediaCard extends HTMLElement {
           const rs = raw.seasons.find(s => s.seasonNumber === sNum);
           if (rs) rs.monitored = newMon;
           btn.dataset.monitored = String(newMon);
-          btn.style.color = newMon ? "#4caf50" : "#9e9e9e";
+          btn.classList.toggle("monitored", newMon);
           btn.textContent = `${newMon ? "●" : "○"} Mon`;
         } catch (err) {
           this._modalToast(
@@ -1004,6 +1182,30 @@ class HarrMediaCard extends HTMLElement {
           btn.disabled = false;
           btn.textContent = "Search";
         }
+      });
+    });
+
+    // Per-episode monitor toggle
+    container.querySelectorAll("[data-mon-ep]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const epId = parseInt(btn.dataset.monEp, 10);
+        const wasMonitored = btn.dataset.monitored === "true";
+        const newMon = !wasMonitored;
+        btn.disabled = true;
+        try {
+          await harrFetch(this._hass, `${cfg.base}/api/v3/episode/monitor`, {
+            method: "PUT",
+            body: JSON.stringify({ episodeIds: [epId], monitored: newMon }),
+          });
+          btn.dataset.monitored = String(newMon);
+          btn.textContent = newMon ? "●" : "○";
+          btn.classList.toggle("monitored", newMon);
+        } catch (err) {
+          this._modalToast(container.closest(".modal-overlay"), `Monitor update failed: ${err.message}`, true);
+        }
+        btn.disabled = false;
       });
     });
 
@@ -1053,30 +1255,44 @@ class HarrMediaCard extends HTMLElement {
 
     let infoHtml;
     if (have.length > 0 || missing.length > 0) {
-      const haveChips    = have.map(s =>
-        `<span class="sub-lang have">✓ ${_esc(s.name || s.code2 || "?")}</span>`).join("");
-      const missingChips = missing.map(s =>
-        `<span class="sub-lang missing">✗ ${_esc(s.name || s.code2 || "?")}</span>`).join("");
-      infoHtml = `<div class="sub-langs">${haveChips}${missingChips}</div>`;
+      const allPills = [
+        ...have.map(s => `<span class="sub-lang have">${_esc(s.name || s.code2 || "?")}</span>`),
+        ...missing.map(s => `<span class="sub-lang missing">${_esc(s.name || s.code2 || "?")}</span>`),
+      ];
+      const MAX = 3;
+      const visible = allPills.slice(0, MAX).join("");
+      const extra = allPills.length - MAX;
+      const overflow = extra > 0
+        ? `<span class="sub-lang" style="color:var(--harr-text-secondary,#9e9e9e);border:1px solid rgba(255,255,255,0.12)">+${extra}</span>`
+        : "";
+      infoHtml = `<div class="sub-header">
+        <div class="sub-langs">${visible}${overflow}</div>
+        <button class="btn-subtitle" id="sub-search-btn">Search Missing</button>
+      </div>`;
     } else if (entry.episodeFileCount !== undefined) {
       const total   = (entry.episodeFileCount || 0) + (entry.episodeMissingCount || 0);
       const absent  = entry.episodeMissingCount || 0;
       const present = entry.episodeFileCount    || 0;
       infoHtml = `
-        <div class="sub-episode-summary">
-          ${total} episode${total !== 1 ? "s" : ""} &mdash;
-          ${present} with subtitles${absent > 0
-            ? `, <span class="count-missing">${absent} missing</span>`
-            : " ✓"}
+        <div class="sub-header">
+          <div class="sub-episode-summary" style="flex:1">
+            ${total} episode${total !== 1 ? "s" : ""} &mdash;
+            ${present} with subtitles${absent > 0
+              ? `, <span class="count-missing">${absent} missing</span>`
+              : " ✓"}
+          </div>
+          <button class="btn-subtitle" id="sub-search-btn">Search Missing</button>
         </div>`;
     } else {
-      infoHtml = `<div class="bazarr-na">No subtitle data available</div>`;
+      infoHtml = `<div class="sub-header">
+        <div class="bazarr-na" style="flex:1">No subtitle data available</div>
+        <button class="btn-subtitle" id="sub-search-btn">Search Missing</button>
+      </div>`;
     }
 
     container.innerHTML = `
       <div class="section-divider">Subtitles</div>
-      ${infoHtml}
-      <button class="btn-subtitle" id="sub-search-btn">Search Missing</button>`;
+      ${infoHtml}`;
 
     container.querySelector("#sub-search-btn").addEventListener("click", async () => {
       const btn = container.querySelector("#sub-search-btn");

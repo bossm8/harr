@@ -7,7 +7,7 @@ import aiohttp
 from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView, KEY_HASS_USER
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from ..const import (
     CONF_ADMIN_ONLY,
@@ -40,7 +40,7 @@ class QBittorrentProxyView(HomeAssistantView):
         verify_ssl = config.get(CONF_QBT_VERIFY_SSL, True)
         login_url = f"{base_url}/api/v2/auth/login"
 
-        session = async_create_clientsession(hass, verify_ssl=verify_ssl)
+        session = async_get_clientsession(hass, verify_ssl=verify_ssl)
         try:
             async with session.post(
                 login_url,
@@ -60,8 +60,6 @@ class QBittorrentProxyView(HomeAssistantView):
         except aiohttp.ClientError as err:
             _LOGGER.error("qBittorrent login error: %s", err)
             return None
-        finally:
-            await session.close()
 
     async def _proxy(
         self,
@@ -99,6 +97,7 @@ class QBittorrentProxyView(HomeAssistantView):
         if not sid:
             sid = await self._get_cookie(hass, config)
             if sid:
+                _LOGGER.debug("qBittorrent: fetched new SID cookie")
                 hass.data[DOMAIN][DATA_QBT_COOKIE] = sid
             else:
                 return web.Response(
@@ -106,11 +105,12 @@ class QBittorrentProxyView(HomeAssistantView):
                     content_type="application/json",
                     text='{"error": "qBittorrent authentication failed"}',
                 )
+        else:
+            _LOGGER.debug("qBittorrent: using cached SID cookie")
 
         target_url = f"{base_url}/{path.lstrip('/')}" if path else base_url
         params = dict(request.rel_url.query)
 
-        session = async_create_clientsession(hass, verify_ssl=verify_ssl)
         try:
             cookie_jar = aiohttp.CookieJar(unsafe=True)
             cookie_jar.update_cookies({"SID": sid})
@@ -133,6 +133,7 @@ class QBittorrentProxyView(HomeAssistantView):
                 ) as upstream:
                     if upstream.status == 403 and retry:
                         # Session expired — re-authenticate once
+                        _LOGGER.debug("qBittorrent: session expired (403), re-authenticating")
                         hass.data[DOMAIN].pop(DATA_QBT_COOKIE, None)
                         return await self._proxy(request, path, method, body, retry=False)
 
@@ -157,8 +158,6 @@ class QBittorrentProxyView(HomeAssistantView):
                 content_type="application/json",
                 text=f'{{"error": "Proxy error: {err}"}}',
             )
-        finally:
-            await session.close()
 
     async def get(self, request: web.Request, path: str = "") -> web.Response:
         return await self._proxy(request, path, "GET")

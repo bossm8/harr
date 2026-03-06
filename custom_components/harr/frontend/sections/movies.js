@@ -3,7 +3,7 @@
  * Shows the Radarr library with a poster grid and allows adding new movies.
  */
 
-import { BaseSection, SECTION_STYLES, EXTRA_STYLES, harrFetch } from "./_base-section.js";
+import { BaseSection, SECTION_STYLES, EXTRA_STYLES, harrFetch, proxyImageUrl } from "./_base-section.js";
 import "../components/media-card.js";
 
 const BASE = "/api/harr/radarr";
@@ -79,7 +79,7 @@ class HarrMovies extends BaseSection {
 
     for (const movie of movies) {
       const poster = movie.images?.find((i) => i.coverType === "poster");
-      const posterUrl = poster?.remoteUrl || poster?.url || null;
+      const posterUrl = proxyImageUrl(poster?.remoteUrl || poster?.url || null);
       const downloadStatus = movie.hasFile
         ? "Downloaded"
         : (movie.monitored ? "Missing" : "Unmonitored");
@@ -192,7 +192,7 @@ class HarrMovies extends BaseSection {
 
     const resultItemsHtml = results.map((m, i) => {
       const poster = m.images?.find((img) => img.coverType === "poster");
-      const posterUrl = poster?.remoteUrl || poster?.url || null;
+      const posterUrl = proxyImageUrl(poster?.remoteUrl || poster?.url || null);
       const posterHtml = posterUrl
         ? `<img class="result-poster" src="${_esc(posterUrl)}" alt="${_esc(m.title)}" loading="lazy">`
         : `<div class="result-poster-ph">🎬</div>`;

@@ -6,7 +6,7 @@
  * Responsive: full pill on larger screens, coloured dot with letter on ≤500px.
  */
 
-import { BaseSection, SECTION_STYLES, harrFetch, getHarrConfig } from "./_base-section.js";
+import { BaseSection, SECTION_STYLES, harrFetch, getHarrConfig, proxyImageUrl } from "./_base-section.js";
 
 const RADARR_DATES = [
   { field: "inCinemas",       label: "Cinema",   letter: "C", key: "cinema"   },
@@ -696,7 +696,7 @@ class HarrCalendar extends BaseSection {
           subtitle:    label + " Release",
           releaseType: letter,
           service:     "radarr",
-          posterUrl:   poster?.remoteUrl || null,
+          posterUrl:   proxyImageUrl(poster?.remoteUrl || poster?.url || null),
           overview:    item.overview || "",
           year:        item.year || "",
           tmdbId:      item.tmdbId || null,
@@ -719,7 +719,7 @@ class HarrCalendar extends BaseSection {
         subtitle:    item.title || "Episode",
         releaseType: "E",
         service:     "sonarr",
-        posterUrl:   poster?.remoteUrl || null,
+        posterUrl:   proxyImageUrl(poster?.remoteUrl || poster?.url || null),
         overview:    "",
         tmdbId:      item.series?.tmdbId || null,
       });

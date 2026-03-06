@@ -13,6 +13,7 @@ from homeassistant.data_entry_flow import section
 
 from .const import (
     CONF_ADMIN_ONLY,
+    CONF_IMAGE_CACHE_DISK,
     CONF_BAZARR_API_KEY,
     CONF_BAZARR_URL,
     CONF_BAZARR_VERIFY_SSL,
@@ -106,6 +107,12 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
             }),
             {"collapsed": False},
         ),
+        vol.Required("performance"): section(
+            vol.Schema({
+                vol.Optional(CONF_IMAGE_CACHE_DISK, default=False): bool,
+            }),
+            {"collapsed": False},
+        ),
     }
 )
 
@@ -169,36 +176,57 @@ async def _validate_input(data: dict) -> dict:
     errors: dict[str, str] = {}
 
     if data.get(CONF_RADARR_URL):
+        _LOGGER.debug("Testing Radarr connection: %s", data[CONF_RADARR_URL])
         async with _make_session(data.get(CONF_RADARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_RADARR_URL], data.get(CONF_RADARR_API_KEY, ""), "api/v3/system/status")
             if err:
+                _LOGGER.debug("Radarr connection test failed: %s", err)
                 errors["radarr"] = err
+            else:
+                _LOGGER.debug("Radarr connection test passed")
 
     if data.get(CONF_SONARR_URL):
+        _LOGGER.debug("Testing Sonarr connection: %s", data[CONF_SONARR_URL])
         async with _make_session(data.get(CONF_SONARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_SONARR_URL], data.get(CONF_SONARR_API_KEY, ""), "api/v3/system/status")
             if err:
+                _LOGGER.debug("Sonarr connection test failed: %s", err)
                 errors["sonarr"] = err
+            else:
+                _LOGGER.debug("Sonarr connection test passed")
 
     if data.get(CONF_SEERR_URL):
+        _LOGGER.debug("Testing Seerr connection: %s", data[CONF_SEERR_URL])
         async with _make_session(data.get(CONF_SEERR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_SEERR_URL], data.get(CONF_SEERR_API_KEY, ""), "api/v1/status")
             if err:
+                _LOGGER.debug("Seerr connection test failed: %s", err)
                 errors["seerr"] = err
+            else:
+                _LOGGER.debug("Seerr connection test passed")
 
     if data.get(CONF_BAZARR_URL):
+        _LOGGER.debug("Testing Bazarr connection: %s", data[CONF_BAZARR_URL])
         async with _make_session(data.get(CONF_BAZARR_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(session, data[CONF_BAZARR_URL], data.get(CONF_BAZARR_API_KEY, ""), "api/system/status")
             if err:
+                _LOGGER.debug("Bazarr connection test failed: %s", err)
                 errors["bazarr"] = err
+            else:
+                _LOGGER.debug("Bazarr connection test passed")
 
     if data.get(CONF_QBT_URL):
+        _LOGGER.debug("Testing qBittorrent connection: %s", data[CONF_QBT_URL])
         async with _make_session(data.get(CONF_QBT_VERIFY_SSL, True)) as session:
             err = await _test_qbt(session, data[CONF_QBT_URL], data.get(CONF_QBT_USERNAME, ""), data.get(CONF_QBT_PASSWORD, ""))
             if err:
+                _LOGGER.debug("qBittorrent connection test failed: %s", err)
                 errors["qbittorrent"] = err
+            else:
+                _LOGGER.debug("qBittorrent connection test passed")
 
     if data.get(CONF_SABNZBD_URL):
+        _LOGGER.debug("Testing SABnzbd connection: %s", data[CONF_SABNZBD_URL])
         async with _make_session(data.get(CONF_SABNZBD_VERIFY_SSL, True)) as session:
             err = await _test_api_key_service(
                 session,
@@ -208,7 +236,10 @@ async def _validate_input(data: dict) -> dict:
                 header_name="X-Api-Key-Unused",  # SABnzbd uses query param, not header
             )
             if err:
+                _LOGGER.debug("SABnzbd connection test failed: %s", err)
                 errors["sabnzbd"] = err
+            else:
+                _LOGGER.debug("SABnzbd connection test passed")
 
     return errors
 
@@ -329,6 +360,12 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("access_control"): section(
                     vol.Schema({
                         vol.Optional(CONF_ADMIN_ONLY, default=current.get(CONF_ADMIN_ONLY, False)): bool,
+                    }),
+                    {"collapsed": False},
+                ),
+                vol.Required("performance"): section(
+                    vol.Schema({
+                        vol.Optional(CONF_IMAGE_CACHE_DISK, default=current.get(CONF_IMAGE_CACHE_DISK, False)): bool,
                     }),
                     {"collapsed": False},
                 ),

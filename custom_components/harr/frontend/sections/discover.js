@@ -4,7 +4,7 @@
  * Includes a "Request" button that sends a media request to seerr.
  */
 
-import { BaseSection, SECTION_STYLES, harrFetch, getHarrConfig } from "./_base-section.js";
+import { BaseSection, SECTION_STYLES, harrFetch, getHarrConfig, proxyImageUrl } from "./_base-section.js";
 import "../components/media-card.js";
 
 const BASE = "/api/harr/seerr";
@@ -158,7 +158,7 @@ class HarrDiscover extends BaseSection {
 
     for (const item of this._items) {
       const posterPath = item.posterPath;
-      const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w300${posterPath}` : null;
+      const posterUrl = posterPath ? proxyImageUrl(`https://image.tmdb.org/t/p/w300${posterPath}`) : null;
       const avail = AVAILABILITY[item.mediaInfo?.status] || AVAILABILITY[0];
 
       const card = document.createElement("harr-media-card");
@@ -209,7 +209,8 @@ class HarrDiscover extends BaseSection {
            </div>`
         ).join("")}</div>`
       : "";
-    const mediaUrl = raw.mediaInfo?.mediaUrl || "";
+    const rawMediaUrl = raw.mediaInfo?.mediaUrl || "";
+    const mediaUrl = rawMediaUrl.startsWith("https://") ? rawMediaUrl : "";
     const reqInfo = (() => {
       const r = raw.mediaInfo?.requests?.[0];
       if (!r) return "";
@@ -242,8 +243,8 @@ class HarrDiscover extends BaseSection {
         </div>` : ""}
         ${datesHtml}
         ${reqInfo ? `<div style="font-size:12px;color:var(--harr-text-secondary);margin-bottom:10px">${reqInfo}</div>` : ""}
-        ${alreadyAvailable ? `<div style="color:#4caf50;font-size:13px;margin-bottom:12px">✓ Already available</div>` : ""}
-        ${alreadyRequested ? `<div style="color:#ff9800;font-size:13px;margin-bottom:12px">⏳ Already requested / processing</div>` : ""}
+        ${alreadyAvailable ? `<div style="color:#4caf50;font-size:13px;margin-bottom:12px">Available</div>` : ""}
+        ${alreadyRequested ? `<div style="color:#ff9800;font-size:13px;margin-bottom:12px">Requested / Processing</div>` : ""}
         <div id="request-options" style="display:none"></div>
         <div class="modal-actions">
           ${mediaUrl ? `<a href="${_esc(mediaUrl)}" target="_blank" style="
