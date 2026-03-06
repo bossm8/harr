@@ -439,6 +439,25 @@ const CAL_STYLES = `
   }
   .btn-secondary:hover { background: rgba(255,255,255,0.12); }
 
+  @media (max-width: 480px) {
+    .modal-overlay { align-items: flex-end; justify-content: stretch; }
+    .modal {
+      width: 100%; max-width: 100%;
+      height: auto; max-height: 100dvh; border-radius: 0;
+      overflow-y: auto; overflow-x: hidden;
+      padding: max(16px, env(safe-area-inset-top, 16px)) 16px 0;
+    }
+    .modal-actions {
+      position: sticky; bottom: 0;
+      background: var(--harr-card-bg, #1c1c1c);
+      margin: 16px -16px 0;
+      padding: 12px 16px max(20px, env(safe-area-inset-bottom, 20px));
+      border-top: 1px solid var(--harr-border, rgba(255,255,255,0.08));
+      flex-wrap: nowrap; justify-content: stretch; gap: 8px;
+    }
+    .modal-actions .btn-secondary { flex: 1; padding: 8px 8px; font-size: 12px; }
+  }
+
   .btn-nav {
     margin-top: 6px;
     background: rgba(255,255,255,0.08);

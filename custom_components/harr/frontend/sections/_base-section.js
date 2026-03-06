@@ -262,8 +262,34 @@ export const SECTION_STYLES = `
   @media (max-width: 480px) {
     .content { padding: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom, 8px)); }
     .toolbar  { padding: 8px 10px; gap: 8px; }
-    .modal    { padding: 16px; border-radius: 10px; }
     .sub-tab  { padding: 8px 12px; font-size: 12px; }
+
+    /* Full-screen modal — auto-height for short content, capped at full screen for tall */
+    .modal-overlay { align-items: flex-end; justify-content: stretch; }
+    .modal {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      max-height: 100dvh;
+      border-radius: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: max(16px, env(safe-area-inset-top, 16px)) 16px 0;
+    }
+    .modal-actions {
+      position: sticky;
+      bottom: 0;
+      background: var(--harr-card-bg, #1c1c1c);
+      margin: 16px -16px 0;
+      padding: 12px 16px max(20px, env(safe-area-inset-bottom, 20px));
+      border-top: 1px solid var(--harr-border, rgba(255,255,255,0.08));
+      flex-wrap: nowrap;
+      justify-content: stretch;
+      gap: 8px;
+    }
+    .modal-actions .btn-primary,
+    .modal-actions .btn-secondary,
+    .modal-actions .btn-danger { flex: 1; padding: 8px 8px; font-size: 12px; }
   }
 `;
 

@@ -155,10 +155,35 @@ const STYLES = `
   /* ── Mobile ── */
   @media (max-width: 480px) {
     :host {
-      /* 2 poster columns: (viewport - 2x8px content-padding - 16px gap) / 2 */
-      --harr-poster-width: calc((100vw - 40px) / 2);
+      /* 3 poster columns: (viewport - 2x8px content-padding - 2x16px gaps) / 3 */
+      --harr-poster-width: calc((100vw - 48px) / 3);
     }
-    .tab { padding: 10px 12px; font-size: 13px; }
+
+    /* Move tab bar below content for thumb-friendly bottom navigation */
+    .tab-bar {
+      order: 2;
+      border-top: 1px solid var(--harr-border);
+      border-bottom: none;
+      justify-content: space-around;
+      overflow-x: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .section-container { order: 1; }
+
+    /* Icon + label stacked, generous tap target */
+    .tab {
+      flex-direction: column;
+      flex: 1;
+      padding: 8px 4px;
+      gap: 3px;
+      font-size: 10px;
+      min-height: 48px;
+      justify-content: center;
+      border-bottom: none;
+      border-top: 3px solid transparent;
+    }
+    .tab.active { border-top-color: var(--harr-accent); border-bottom-color: transparent; }
+    .tab-icon { font-size: 22px; }
   }
 
   @media (min-width: 871px) {

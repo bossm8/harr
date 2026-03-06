@@ -504,10 +504,53 @@ const CARD_STYLES = `
 
   /* ── Mobile ── */
   @media (max-width: 480px) {
-    .modal          { padding: 16px; }
-    .manage-header  { flex-direction: column; }
     .manage-poster,
-    .manage-poster-ph { width: 100%; height: auto; aspect-ratio: 2 / 3; }
+    .manage-poster-ph {
+      width: var(--harr-poster-width, 105px);
+      height: calc(var(--harr-poster-width, 105px) * 1.5);
+    }
+
+    /* Full-screen modal — exact height so overlay clips correctly */
+    .modal-overlay { align-items: stretch; justify-content: stretch; }
+    .modal {
+      width: 100%;
+      max-width: 100%;
+      height: 100dvh;
+      border-radius: 0;
+      max-height: none;
+      overflow: hidden;
+      padding: max(16px, env(safe-area-inset-top, 16px)) 16px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollable body fills remaining height so buttons can anchor at the bottom */
+    #manage-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-right: -16px;
+      padding-right: 16px;
+    }
+
+    /* Sticky action buttons always visible at bottom */
+    .modal-actions {
+      position: sticky;
+      bottom: 0;
+      background: var(--harr-card-bg, #1c1c1c);
+      margin: auto -16px 0;
+      padding: 12px 16px max(26px, env(safe-area-inset-bottom, 26px));
+      border-top: 1px solid var(--harr-border, rgba(255,255,255,0.08));
+      flex-wrap: nowrap;
+      justify-content: stretch;
+      gap: 8px;
+    }
+    .modal-actions .btn-primary,
+    .modal-actions .btn-secondary,
+    .modal-actions .btn-danger { flex: 1; padding: 8px 8px; font-size: 12px; }
   }
 
   /* ── Episode card (multi-line layout) ── */
@@ -556,7 +599,9 @@ const CARD_STYLES = `
     cursor: pointer;
     font-size: 14px;
     color: var(--harr-text-secondary, #9e9e9e);
-    padding: 0 2px;
+    padding: 8px 6px;
+    min-width: 32px;
+    min-height: 32px;
     flex-shrink: 0;
     line-height: 1;
   }
@@ -1103,7 +1148,7 @@ class HarrMediaCard extends HTMLElement {
               <span class="ep-title" title="${_esc(ep.title || "")}">${_esc(ep.title || "No title")}</span>
               ${fileIcon}
               <button class="ep-mon-btn${ep.monitored ? ' monitored' : ''}" data-mon-ep="${ep.id}" data-monitored="${ep.monitored}" title="${ep.monitored ? 'Monitored — click to unmonitor' : 'Unmonitored — click to monitor'}">${ep.monitored ? '●' : '○'}</button>
-              <button class="btn-subtitle" data-epid="${ep.id}" style="padding:2px 8px;font-size:11px">Search</button>
+              <button class="btn-subtitle" data-epid="${ep.id}" style="padding:6px 10px;font-size:11px">Search</button>
             </div>
             ${airDateHtml}
             ${metaHtml}
@@ -1117,7 +1162,7 @@ class HarrMediaCard extends HTMLElement {
             ${_esc(label)}
             <span class="ep-season-count">${downloaded} / ${eps.length}</span>
             <button class="mon-indicator${isMonitored ? ' monitored' : ''}" data-monitor-season="${seasonNum}" data-monitored="${isMonitored}" title="Toggle season monitoring">${monLabel}</button>
-            <button class="btn-subtitle" data-season="${seasonNum}" style="padding:2px 8px;font-size:11px">Search</button>
+            <button class="btn-subtitle" data-season="${seasonNum}" style="padding:6px 10px;font-size:11px">Search</button>
           </summary>
           ${epCards}
         </details>`;

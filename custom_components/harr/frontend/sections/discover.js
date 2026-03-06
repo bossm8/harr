@@ -17,12 +17,12 @@ const SUB_TABS = [
 ];
 
 const AVAILABILITY = {
-  0: { label: "Not Added",           color: "#9e9e9e" },
-  1: { label: "Unknown",             color: "#9e9e9e" },
-  2: { label: "Pending",             color: "#ff9800" },
-  3: { label: "Processing",          color: "#9c27b0" },
-  4: { label: "Partially Available", color: "#2196f3" },
-  5: { label: "Available",           color: "#4caf50" },
+  0: { label: "Not Added",   color: "#9e9e9e" },
+  1: { label: "Unknown",     color: "#9e9e9e" },
+  2: { label: "Pending",     color: "#ff9800" },
+  3: { label: "Processing",  color: "#9c27b0" },
+  4: { label: "Partial",     color: "#2196f3" },
+  5: { label: "Available",   color: "#4caf50" },
 };
 
 class HarrDiscover extends BaseSection {
@@ -189,6 +189,7 @@ class HarrDiscover extends BaseSection {
     const title = cardItem.title;
     const year = cardItem.year;
     const alreadyAvailable = raw.mediaInfo?.status === 5;
+    const alreadyPartial   = raw.mediaInfo?.status === 4;
     const alreadyRequested = raw.mediaInfo?.status === 2 || raw.mediaInfo?.status === 3;
 
     const avail = AVAILABILITY[raw.mediaInfo?.status ?? 0];
@@ -198,8 +199,8 @@ class HarrDiscover extends BaseSection {
     const _fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
     const datePairs = [
       raw.releaseDate  ? { label: "Release",   val: raw.releaseDate  } : null,
-      raw.firstAirDate ? { label: "First Air", val: raw.firstAirDate } : null,
-      raw.lastAirDate  ? { label: "Last Air",  val: raw.lastAirDate  } : null,
+      raw.firstAirDate ? { label: "First Air Date", val: raw.firstAirDate } : null,
+      raw.lastAirDate  ? { label: "Last Air Date",  val: raw.lastAirDate  } : null,
     ].filter(Boolean);
     const datesHtml = datePairs.length
       ? `<div style="font-size:12px;margin-bottom:10px">${datePairs.map(({ label, val }) =>
@@ -244,6 +245,7 @@ class HarrDiscover extends BaseSection {
         ${datesHtml}
         ${reqInfo ? `<div style="font-size:12px;color:var(--harr-text-secondary);margin-bottom:10px">${reqInfo}</div>` : ""}
         ${alreadyAvailable ? `<div style="color:#4caf50;font-size:13px;margin-bottom:12px">Available</div>` : ""}
+        ${alreadyPartial   ? `<div style="color:#2196f3;font-size:13px;margin-bottom:12px">Partially Available</div>` : ""}
         ${alreadyRequested ? `<div style="color:#ff9800;font-size:13px;margin-bottom:12px">Requested / Processing</div>` : ""}
         <div id="request-options" style="display:none"></div>
         <div class="modal-actions">
@@ -254,8 +256,8 @@ class HarrDiscover extends BaseSection {
             color:var(--primary-text-color,#e1e1e1);font-size:13px;font-weight:600;
             text-decoration:none;margin-right:auto">▶ Watch in Jellyfin</a>` : ""}
           <button class="btn-secondary" id="cancel-btn">Close</button>
-          ${alreadyAvailable ? `<button class="btn-secondary" id="nav-btn">${_esc(navLabel)}</button>` : ""}
-          ${!alreadyAvailable && !alreadyRequested ? `<button class="btn-primary" id="request-btn">Request</button>` : ""}
+          ${(alreadyAvailable || alreadyPartial) ? `<button class="btn-secondary" id="nav-btn">${_esc(navLabel)}</button>` : ""}
+          ${!alreadyAvailable && !alreadyPartial && !alreadyRequested ? `<button class="btn-primary" id="request-btn">Request</button>` : ""}
         </div>
       </div>
     `;
