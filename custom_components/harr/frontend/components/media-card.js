@@ -402,10 +402,6 @@ const CARD_STYLES = `
     flex-shrink: 0;
     align-self: flex-start;
   }
-  @media (max-width: 480px) {
-    .sub-header { flex-direction: column; }
-    .sub-header .btn-subtitle { width: 100%; }
-  }
   .genre-pills { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 0 12px; }
   .genre-pill {
     display: inline-flex;
