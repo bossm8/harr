@@ -59,6 +59,7 @@ const MODAL_STYLES = `
     margin-top: 20px;
     flex-wrap: wrap;
   }
+  .modal-actions #close-btn { margin-right: auto; }
   .btn-secondary {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.15);

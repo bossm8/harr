@@ -234,6 +234,7 @@ export const SECTION_STYLES = `
     justify-content: flex-end;
     margin-top: 20px;
   }
+  .modal .modal-actions > *:first-child { margin-right: auto; }
 
   .btn-secondary {
     background: rgba(255,255,255,0.08);

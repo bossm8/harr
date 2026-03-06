@@ -425,6 +425,7 @@ const CAL_STYLES = `
     justify-content: flex-end;
     margin-top: 16px;
   }
+  .modal-actions > *:first-child { margin-right: auto; }
 
   .btn-secondary {
     background: rgba(255,255,255,0.08);

@@ -260,6 +260,7 @@ const CARD_STYLES = `
     margin-top: 20px;
     flex-wrap: wrap;
   }
+  .modal-actions #close-btn { margin-right: auto; }
 
   .btn-primary {
     background: var(--harr-accent, #e5a00d);
