@@ -43,8 +43,8 @@ const REQ_STYLES = `
   }
 
   .poster {
-    width: 80px;
-    height: 120px;
+    width: 90px;
+    height: 135px;
     border-radius: 6px;
     object-fit: cover;
     background: #2a2a2a;
@@ -52,8 +52,8 @@ const REQ_STYLES = `
   }
 
   .poster-ph {
-    width: 80px;
-    height: 120px;
+    width: 90px;
+    height: 135px;
     border-radius: 6px;
     background: #2a2a2a;
     display: flex;

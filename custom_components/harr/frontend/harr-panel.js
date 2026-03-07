@@ -214,6 +214,13 @@ class HaHarr extends HTMLElement {
   connectedCallback() {
     this._render();
     window.scrollTo({ top: 0, behavior: "instant" });
+    history.replaceState({ harr: true, tab: this._activeTab }, "");
+    this._onPopstate = (e) => this._handlePopstate(e);
+    window.addEventListener("popstate", this._onPopstate);
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener("popstate", this._onPopstate);
   }
 
   _render() {
@@ -269,7 +276,7 @@ class HaHarr extends HTMLElement {
     });
   }
 
-  _switchTab(tabId) {
+  _switchTab(tabId, pushHistory = true) {
     if (tabId === this._activeTab) return;
     this._activeTab = tabId;
 
@@ -279,6 +286,21 @@ class HaHarr extends HTMLElement {
     });
 
     this._renderSection();
+    if (pushHistory) {
+      history.pushState({ harr: true, tab: tabId }, "");
+    }
+  }
+
+  _handlePopstate(e) {
+    const openModal = this._activeSection?.shadowRoot?.querySelector(".modal-overlay");
+    if (openModal) {
+      openModal.remove();
+      history.pushState({ harr: true, tab: this._activeTab }, "");
+      return;
+    }
+    if (e.state?.harr) {
+      this._switchTab(e.state.tab, false);
+    }
   }
 
   _renderSection() {

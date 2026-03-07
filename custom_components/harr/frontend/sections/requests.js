@@ -213,10 +213,10 @@ class HarrRequests extends BaseSection {
     const year   = (detail.releaseDate || detail.firstAirDate || "").slice(0, 4);
     const type   = media.mediaType === "tv" ? "TV Show" : "Movie";
     const who    = req.requestedBy?.displayName || req.requestedBy?.username || "someone";
-    const poster = detail.posterPath ? proxyImageUrl(`https://image.tmdb.org/t/p/w92${detail.posterPath}`) : null;
+    const poster = detail.posterPath ? proxyImageUrl(`https://image.tmdb.org/t/p/w185${detail.posterPath}`) : null;
     const posterHtml = poster
-      ? `<img src="${_esc(poster)}" style="width:50px;height:75px;border-radius:4px;object-fit:cover;flex-shrink:0">`
-      : `<div style="width:50px;height:75px;border-radius:4px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${media.mediaType === "tv" ? "📺" : "🎬"}</div>`;
+      ? `<img src="${_esc(poster)}" style="width:90px;height:135px;border-radius:4px;object-fit:cover;flex-shrink:0">`
+      : `<div style="width:90px;height:135px;border-radius:4px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${media.mediaType === "tv" ? "📺" : "🎬"}</div>`;
 
     const overlay = document.createElement("div");
     overlay.className = "modal-overlay";

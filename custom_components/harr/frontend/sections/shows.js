@@ -16,7 +16,6 @@ class HarrShows extends BaseSection {
     this._debounceTimer = null;
     this._profiles = [];
     this._rootFolders = [];
-    this._languageProfiles = [];
     this._selectedResult = null;
   }
 
@@ -165,7 +164,6 @@ class HarrShows extends BaseSection {
           harrFetch(this._hass, `${BASE}/api/v3/qualityprofile`),
           harrFetch(this._hass, `${BASE}/api/v3/rootfolder`),
         ]);
-        this._languageProfiles = await harrFetch(this._hass, `${BASE}/api/v3/languageprofile`).catch(() => []);
       }
       const results = await harrFetch(this._hass, `${BASE}/api/v3/series/lookup?term=${encodeURIComponent(term)}`);
       this._populateSearchModal(overlay, results || []);

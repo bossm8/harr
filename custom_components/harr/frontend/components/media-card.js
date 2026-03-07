@@ -466,15 +466,6 @@ const CARD_STYLES = `
     flex: 1;
   }
 
-  .ep-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    font-size: 12px;
-  }
-
   .ep-num {
     flex-shrink: 0;
     color: var(--harr-text-secondary, #9e9e9e);
@@ -493,7 +484,6 @@ const CARD_STYLES = `
   .ep-file-ok { color: #4caf50; flex-shrink: 0; }
   .ep-file-na { color: #9e9e9e; flex-shrink: 0; }
 
-  .ep-sub-chips { display: flex; gap: 4px; flex-wrap: wrap; flex-shrink: 0; }
   .ep-sub-chip {
     font-size: 10px;
     padding: 1px 5px;
@@ -1321,7 +1311,7 @@ class HarrMediaCard extends HTMLElement {
             ${total} episode${total !== 1 ? "s" : ""} &mdash;
             ${present} with subtitles${absent > 0
               ? `, <span class="count-missing">${absent} missing</span>`
-              : " ✓"}
+              : ""}
           </div>
           <button class="btn-subtitle" id="sub-search-btn">Search Missing</button>
         </div>`;

@@ -343,7 +343,7 @@ const CAL_STYLES = `
   .modal {
     background: var(--harr-card-bg, #1c1c1c);
     border-radius: 12px;
-    padding: 24px;
+    padding: 0 24px 24px;
     min-width: 320px;
     max-width: 500px;
     width: 90%;
@@ -355,7 +355,12 @@ const CAL_STYLES = `
   }
 
   .modal h2 {
-    margin: 0 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--harr-card-bg, #1c1c1c);
+    margin: -24px -24px 16px;
+    padding: 24px 24px 12px;
     font-size: 17px;
     font-weight: 700;
   }
@@ -371,8 +376,8 @@ const CAL_STYLES = `
   .modal-event:first-child { border-top: none; }
 
   .modal-poster {
-    width: 50px;
-    height: 75px;
+    width: 80px;
+    height: 120px;
     border-radius: 4px;
     object-fit: cover;
     background: #2a2a2a;
@@ -380,8 +385,8 @@ const CAL_STYLES = `
   }
 
   .modal-poster-ph {
-    width: 50px;
-    height: 75px;
+    width: 80px;
+    height: 120px;
     border-radius: 4px;
     background: #2a2a2a;
     flex-shrink: 0;
@@ -446,7 +451,15 @@ const CAL_STYLES = `
       width: 100%; max-width: 100%;
       height: auto; max-height: 100dvh; border-radius: 0;
       overflow-y: auto; overflow-x: hidden;
-      padding: max(16px, env(safe-area-inset-top, 16px)) 16px 0;
+      padding: 0 16px 0;
+    }
+    .modal h2 {
+      margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 24px));
+      margin-left: -16px;
+      margin-right: -16px;
+      padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
+      padding-left: 16px;
+      padding-right: 16px;
     }
     .modal-actions {
       position: sticky; bottom: 0;
