@@ -224,7 +224,7 @@ class HarrDiscover extends BaseSection {
     overlay.className = "modal-overlay";
 
     const posterHtml = cardItem.posterUrl
-      ? `<img src="${cardItem.posterUrl}" style="width:80px;height:120px;border-radius:6px;object-fit:cover;float:left;margin:0 16px 0 0">`
+      ? `<img src="${cardItem.posterUrl}" style="width:120px;height:180px;border-radius:6px;object-fit:cover;float:left;margin:0 16px 0 0">`
       : "";
 
     const navTab   = mediaType === "tv" ? "shows" : "movies";

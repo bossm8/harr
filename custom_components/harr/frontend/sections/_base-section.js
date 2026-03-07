@@ -120,6 +120,7 @@ export const SECTION_STYLES = `
     color: var(--harr-text-secondary, #9e9e9e);
     font-size: 14px;
     gap: 10px;
+    grid-column: 1 / -1;
   }
 
   .spinner {
@@ -453,7 +454,11 @@ let _harrConfigInflight = null;
  */
 export function proxyImageUrl(rawUrl) {
   if (!rawUrl) return null;
-  return `/api/harr/image?url=${encodeURIComponent(rawUrl)}`;
+  const sized = rawUrl.replace(
+    "image.tmdb.org/t/p/original/",
+    "image.tmdb.org/t/p/w342/",
+  );
+  return `/api/harr/image?url=${encodeURIComponent(sized)}`;
 }
 
 export async function getHarrConfig(hass) {

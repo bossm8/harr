@@ -196,8 +196,8 @@ const CARD_STYLES = `
   }
 
   .manage-poster {
-    width: 70px;
-    height: 105px;
+    width: 120px;
+    height: 180px;
     border-radius: 6px;
     object-fit: cover;
     flex-shrink: 0;
@@ -205,8 +205,8 @@ const CARD_STYLES = `
   }
 
   .manage-poster-ph {
-    width: 70px;
-    height: 105px;
+    width: 120px;
+    height: 180px;
     border-radius: 6px;
     background: #2a2a2a;
     flex-shrink: 0;
@@ -1074,7 +1074,7 @@ class HarrMediaCard extends HTMLElement {
 
     // Regular seasons first, specials (0) last
     const seasons = [...seasonMap.keys()].sort((a, b) =>
-      a === 0 ? 1 : b === 0 ? -1 : a - b
+      a === 0 ? 1 : b === 0 ? -1 : b - a
     );
 
     const hasBazarr = Object.keys(bazarrMap).length > 0;
