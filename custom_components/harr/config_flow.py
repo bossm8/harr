@@ -14,6 +14,8 @@ from homeassistant.data_entry_flow import section
 from .const import (
     CONF_ADMIN_ONLY,
     CONF_IMAGE_CACHE_DISK,
+    CONF_IMAGE_ALLOWED_HOSTS,
+    DEFAULT_IMAGE_ALLOWED_HOSTS,
     CONF_BAZARR_API_KEY,
     CONF_BAZARR_URL,
     CONF_BAZARR_VERIFY_SSL,
@@ -39,6 +41,19 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+# All string config keys — used to ensure cleared fields are saved as "" rather
+# than being absent from user_input (HA section forms omit empty text fields).
+_ALL_STRING_KEYS = (
+    CONF_RADARR_URL, CONF_RADARR_API_KEY,
+    CONF_SONARR_URL, CONF_SONARR_API_KEY,
+    CONF_SEERR_URL, CONF_SEERR_API_KEY,
+    CONF_BAZARR_URL, CONF_BAZARR_API_KEY,
+    CONF_QBT_URL, CONF_QBT_USERNAME, CONF_QBT_PASSWORD,
+    CONF_SABNZBD_URL, CONF_SABNZBD_API_KEY,
+    CONF_IMAGE_ALLOWED_HOSTS,
+)
+
+
 def _flatten_sections(data: dict) -> dict:
     """Flatten section-nested form submission into a flat dict for storage."""
     flat = {}
@@ -47,6 +62,10 @@ def _flatten_sections(data: dict) -> dict:
             flat.update(val)
         else:
             flat[key] = val
+    # Ensure any string field the user may have cleared is explicitly "" rather
+    # than absent (HA section forms don't submit empty text fields).
+    for key in _ALL_STRING_KEYS:
+        flat.setdefault(key, "")
     return flat
 
 
@@ -110,6 +129,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("performance"): section(
             vol.Schema({
                 vol.Optional(CONF_IMAGE_CACHE_DISK, default=False): bool,
+                vol.Optional(CONF_IMAGE_ALLOWED_HOSTS, default=DEFAULT_IMAGE_ALLOWED_HOSTS): str,
             }),
             {"collapsed": False},
         ),
@@ -306,53 +326,60 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 )
                 return self.async_create_entry(title="", data={})
 
+        # Use description={"suggested_value": ...} instead of default= for all
+        # string fields.  HA's frontend pre-fills "suggested_value" for display
+        # but — unlike "default" — does NOT restore it when the user clears the
+        # field and submits.  This allows clearing any text field to save "".
+        def _sv(val: str) -> dict:
+            return {"suggested_value": val}
+
         schema = vol.Schema(
             {
                 vol.Required("radarr"): section(
                     vol.Schema({
-                        vol.Optional(CONF_RADARR_URL, default=current.get(CONF_RADARR_URL, "")): str,
-                        vol.Optional(CONF_RADARR_API_KEY, default=current.get(CONF_RADARR_API_KEY, "")): str,
+                        vol.Optional(CONF_RADARR_URL, description=_sv(current.get(CONF_RADARR_URL, ""))): str,
+                        vol.Optional(CONF_RADARR_API_KEY, description=_sv(current.get(CONF_RADARR_API_KEY, ""))): str,
                         vol.Optional(CONF_RADARR_VERIFY_SSL, default=current.get(CONF_RADARR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
                 ),
                 vol.Required("sonarr"): section(
                     vol.Schema({
-                        vol.Optional(CONF_SONARR_URL, default=current.get(CONF_SONARR_URL, "")): str,
-                        vol.Optional(CONF_SONARR_API_KEY, default=current.get(CONF_SONARR_API_KEY, "")): str,
+                        vol.Optional(CONF_SONARR_URL, description=_sv(current.get(CONF_SONARR_URL, ""))): str,
+                        vol.Optional(CONF_SONARR_API_KEY, description=_sv(current.get(CONF_SONARR_API_KEY, ""))): str,
                         vol.Optional(CONF_SONARR_VERIFY_SSL, default=current.get(CONF_SONARR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
                 ),
                 vol.Required("seerr"): section(
                     vol.Schema({
-                        vol.Optional(CONF_SEERR_URL, default=current.get(CONF_SEERR_URL, "")): str,
-                        vol.Optional(CONF_SEERR_API_KEY, default=current.get(CONF_SEERR_API_KEY, "")): str,
+                        vol.Optional(CONF_SEERR_URL, description=_sv(current.get(CONF_SEERR_URL, ""))): str,
+                        vol.Optional(CONF_SEERR_API_KEY, description=_sv(current.get(CONF_SEERR_API_KEY, ""))): str,
                         vol.Optional(CONF_SEERR_VERIFY_SSL, default=current.get(CONF_SEERR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
                 ),
                 vol.Required("bazarr"): section(
                     vol.Schema({
-                        vol.Optional(CONF_BAZARR_URL, default=current.get(CONF_BAZARR_URL, "")): str,
-                        vol.Optional(CONF_BAZARR_API_KEY, default=current.get(CONF_BAZARR_API_KEY, "")): str,
+                        vol.Optional(CONF_BAZARR_URL, description=_sv(current.get(CONF_BAZARR_URL, ""))): str,
+                        vol.Optional(CONF_BAZARR_API_KEY, description=_sv(current.get(CONF_BAZARR_API_KEY, ""))): str,
                         vol.Optional(CONF_BAZARR_VERIFY_SSL, default=current.get(CONF_BAZARR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
                 ),
                 vol.Required("qbittorrent"): section(
                     vol.Schema({
-                        vol.Optional(CONF_QBT_URL, default=current.get(CONF_QBT_URL, "")): str,
-                        vol.Optional(CONF_QBT_USERNAME, default=current.get(CONF_QBT_USERNAME, "")): str,
-                        vol.Optional(CONF_QBT_PASSWORD, default=current.get(CONF_QBT_PASSWORD, "")): str,
+                        vol.Optional(CONF_QBT_URL, description=_sv(current.get(CONF_QBT_URL, ""))): str,
+                        vol.Optional(CONF_QBT_USERNAME, description=_sv(current.get(CONF_QBT_USERNAME, ""))): str,
+                        vol.Optional(CONF_QBT_PASSWORD, description=_sv(current.get(CONF_QBT_PASSWORD, ""))): str,
                         vol.Optional(CONF_QBT_VERIFY_SSL, default=current.get(CONF_QBT_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
                 ),
                 vol.Required("sabnzbd"): section(
                     vol.Schema({
-                        vol.Optional(CONF_SABNZBD_URL, default=current.get(CONF_SABNZBD_URL, "")): str,
-                        vol.Optional(CONF_SABNZBD_API_KEY, default=current.get(CONF_SABNZBD_API_KEY, "")): str,
+                        vol.Optional(CONF_SABNZBD_URL, description=_sv(current.get(CONF_SABNZBD_URL, ""))): str,
+                        vol.Optional(CONF_SABNZBD_API_KEY, description=_sv(current.get(CONF_SABNZBD_API_KEY, ""))): str,
                         vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=current.get(CONF_SABNZBD_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
@@ -366,6 +393,7 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("performance"): section(
                     vol.Schema({
                         vol.Optional(CONF_IMAGE_CACHE_DISK, default=current.get(CONF_IMAGE_CACHE_DISK, False)): bool,
+                        vol.Optional(CONF_IMAGE_ALLOWED_HOSTS, description=_sv(current.get(CONF_IMAGE_ALLOWED_HOSTS) or DEFAULT_IMAGE_ALLOWED_HOSTS)): str,
                     }),
                     {"collapsed": False},
                 ),

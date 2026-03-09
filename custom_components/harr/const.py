@@ -41,3 +41,5 @@ CONF_ADMIN_ONLY = "admin_only"
 
 # Image cache
 CONF_IMAGE_CACHE_DISK = "image_cache_disk"
+CONF_IMAGE_ALLOWED_HOSTS = "image_allowed_hosts"
+DEFAULT_IMAGE_ALLOWED_HOSTS = "image.tmdb.org, artworks.thetvdb.com, assets.fanart.tv, cdn.myanimelist.net"

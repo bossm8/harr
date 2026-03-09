@@ -44,6 +44,8 @@ No build tooling. Plain ES modules loaded directly by the browser.
 - **`sections/{tab}.js`** — One file per tab: `discover`, `movies`, `shows`, `calendar`, `requests`, `downloads`.
 - **`components/`** — Reusable elements: `media-card.js`, `download-item.js`, `request-item.js`, `icons.js`.
 
+Make sure to follow UI and UX best practices seen in streaming apps like Netflix, Disney+ etc. For reactive apps functioning in browser and on mobile.
+
 ### Adding a New Service
 
 1. Add constants to `const.py`.
@@ -60,6 +62,6 @@ When adding any new config field (service setting, feature toggle, etc.):
 1. Add the constant to `const.py`.
 2. Add `vol.Optional(CONF_..., default=...)` to **both** `STEP_USER_DATA_SCHEMA` in `config_flow.py` and the dynamic schema in `HarrOptionsFlow.async_step_init`.
 3. **Update `strings.json`** — add the field under `data` (human-readable label), optionally under `data_description` (helper text shown below the field), and assign it to an appropriate `section` in both `config.step.user` and `options.step.init`. Add a new section entry if the field doesn't belong to an existing one.
-4. **Mirror every change in `translations/en.json`** — this file is the English translation copy and must stay in sync with `strings.json`.
+4. **Mirror every change in `translations/<lang>.json` for the respective lang** — these files are the translation copy and must stay in sync with `strings.json`.
 5. Wire the value in `__init__.py` (YAML flat mapping + use in `async_setup_entry`) and wherever the backend reads config from `hass.data[DOMAIN]`.
 6. If the option affects behaviour at startup (e.g. panel registration flags), note in code comments that a HA restart is required for that part to take effect.

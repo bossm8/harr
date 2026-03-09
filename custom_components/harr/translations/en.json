@@ -84,10 +84,12 @@
           "performance": {
             "name": "Performance",
             "data": {
-              "image_cache_disk": "Enable persistent image cache"
+              "image_cache_disk": "Enable persistent image cache",
+              "image_allowed_hosts": "Image proxy allowed hosts"
             },
             "data_description": {
-              "image_cache_disk": "Store poster images on disk so they survive HA restarts. Images are re-checked against upstream every 7 days and updated if a newer version is available. Cache stored in .storage/harr/image_cache/."
+              "image_cache_disk": "Store poster images on disk so they survive HA restarts. Images are re-checked against upstream every 7 days and updated if a newer version is available. Cache stored in .storage/harr/image_cache/.",
+              "image_allowed_hosts": "Comma-separated list of hostnames the image proxy may fetch from. If cleared, the built-in defaults are used."
             }
           }
         }
@@ -186,10 +188,12 @@
           "performance": {
             "name": "Performance",
             "data": {
-              "image_cache_disk": "Enable persistent image cache"
+              "image_cache_disk": "Enable persistent image cache",
+              "image_allowed_hosts": "Image proxy allowed hosts"
             },
             "data_description": {
-              "image_cache_disk": "Store poster images on disk so they survive HA restarts. Images are re-checked against upstream every 7 days and updated if a newer version is available. Cache stored in .storage/harr/image_cache/."
+              "image_cache_disk": "Store poster images on disk so they survive HA restarts. Images are re-checked against upstream every 7 days and updated if a newer version is available. Cache stored in .storage/harr/image_cache/.",
+              "image_allowed_hosts": "Comma-separated list of hostnames the image proxy may fetch from. If cleared, the built-in defaults are used."
             }
           }
         }

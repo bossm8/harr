@@ -16,6 +16,7 @@ from homeassistant.helpers import config_validation as cv
 from .const import (
     CONF_ADMIN_ONLY,
     CONF_IMAGE_CACHE_DISK,
+    CONF_IMAGE_ALLOWED_HOSTS,
     CONF_RADARR_URL, CONF_RADARR_API_KEY, CONF_RADARR_VERIFY_SSL,
     CONF_SONARR_URL, CONF_SONARR_API_KEY, CONF_SONARR_VERIFY_SSL,
     CONF_SEERR_URL, CONF_SEERR_API_KEY, CONF_SEERR_VERIFY_SSL,
@@ -116,6 +117,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         CONF_SABNZBD_VERIFY_SSL: _svc("sabnzbd").get("verify_ssl", True),
         CONF_ADMIN_ONLY:         yaml.get("admin_only", False),
         CONF_IMAGE_CACHE_DISK:   yaml.get("image_cache_disk", False),
+        CONF_IMAGE_ALLOWED_HOSTS: yaml.get("image_allowed_hosts", ""),
     }
 
     existing = hass.config_entries.async_entries(DOMAIN)

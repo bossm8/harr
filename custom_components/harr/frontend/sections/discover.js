@@ -256,7 +256,7 @@ class HarrDiscover extends BaseSection {
             background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
             color:var(--primary-text-color,#e1e1e1);font-size:13px;font-weight:600;
             text-decoration:none">▶ Watch in Jellyfin</a>` : ""}
-          ${(alreadyAvailable || alreadyPartial) ? `<button class="btn-secondary" id="nav-btn">${_esc(navLabel)}</button>` : ""}
+          ${(alreadyAvailable || alreadyPartial || alreadyRequested) ? `<button class="btn-secondary" id="nav-btn">${_esc(navLabel)}</button>` : ""}
           ${!alreadyAvailable && !alreadyPartial && !alreadyRequested ? `<button class="btn-primary" id="request-btn">Request</button>` : ""}
         </div>
       </div>

@@ -26,21 +26,13 @@ from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
 
-from ..const import CONF_IMAGE_CACHE_DISK, DOMAIN
+from ..const import CONF_IMAGE_CACHE_DISK, CONF_IMAGE_ALLOWED_HOSTS, DEFAULT_IMAGE_ALLOWED_HOSTS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 _REVALIDATE_AFTER = 7 * 24 * 3600  # seconds before a disk entry is re-checked
 
 # ── SSRF protection ───────────────────────────────────────────────────────────
-
-# Only these hostnames may be used as image proxy targets.
-_ALLOWED_HOSTS: frozenset[str] = frozenset({
-    "image.tmdb.org",        # TMDB — Radarr, Sonarr, Seerr
-    "artworks.thetvdb.com",  # TheTVDB — Sonarr
-    "assets.fanart.tv",      # Fanart.tv — Radarr/Sonarr
-    "cdn.myanimelist.net",   # MyAnimeList — Sonarr (anime)
-})
 
 # RFC-1918 / reserved ranges — a resolved IP in any of these is rejected.
 _PRIVATE_NETWORKS = [
@@ -56,13 +48,20 @@ _PRIVATE_NETWORKS = [
 ]
 
 
-def _is_safe_url(url: str) -> bool:
-    """Layer 1 & 2: scheme must be https and hostname must be in _ALLOWED_HOSTS."""
+def _get_allowed_hosts(hass) -> frozenset[str]:
+    """Return the configured set of allowed proxy hostnames, falling back to defaults."""
+    raw: str = hass.data.get(DOMAIN, {}).get(CONF_IMAGE_ALLOWED_HOSTS, "")
+    src = raw.strip() or DEFAULT_IMAGE_ALLOWED_HOSTS
+    return frozenset(h.strip() for h in src.split(",") if h.strip())
+
+
+def _is_safe_url(url: str, allowed_hosts: frozenset[str]) -> bool:
+    """Layer 1 & 2: scheme must be https and hostname must be in allowed_hosts."""
     try:
         parsed = urlparse(url)
     except Exception:
         return False
-    return parsed.scheme == "https" and parsed.hostname in _ALLOWED_HOSTS
+    return parsed.scheme == "https" and parsed.hostname in allowed_hosts
 
 
 async def _resolve_is_public(hostname: str) -> bool:
@@ -101,7 +100,8 @@ class ImageProxyView(HomeAssistantView):
             return web.Response(status=400)
 
         # Layer 1 & 2: scheme + hostname allowlist
-        if not _is_safe_url(image_url):
+        allowed_hosts = _get_allowed_hosts(request.app["hass"])
+        if not _is_safe_url(image_url, allowed_hosts):
             _LOGGER.debug("Image proxy: rejected unsafe URL: %s", image_url)
             return web.Response(status=400)
 

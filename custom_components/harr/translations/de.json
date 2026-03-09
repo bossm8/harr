@@ -84,10 +84,12 @@
           "performance": {
             "name": "Leistung",
             "data": {
-              "image_cache_disk": "Persistenten Bild-Cache aktivieren"
+              "image_cache_disk": "Persistenten Bild-Cache aktivieren",
+              "image_allowed_hosts": "Erlaubte Hosts für Bild-Proxy"
             },
             "data_description": {
-              "image_cache_disk": "Poster-Bilder auf der Festplatte speichern, damit sie HA-Neustarts überdauern. Bilder werden alle 7 Tage gegen die Quelle geprüft und bei Bedarf aktualisiert. Cache gespeichert in .storage/harr/image_cache/."
+              "image_cache_disk": "Poster-Bilder auf der Festplatte speichern, damit sie HA-Neustarts überdauern. Bilder werden alle 7 Tage gegen die Quelle geprüft und bei Bedarf aktualisiert. Cache gespeichert in .storage/harr/image_cache/.",
+              "image_allowed_hosts": "Kommagetrennte Liste von Hostnamen, von denen der Bild-Proxy Bilder abrufen darf. Bei leerem Feld werden die Standardwerte verwendet."
             }
           }
         }
@@ -186,10 +188,12 @@
           "performance": {
             "name": "Leistung",
             "data": {
-              "image_cache_disk": "Persistenten Bild-Cache aktivieren"
+              "image_cache_disk": "Persistenten Bild-Cache aktivieren",
+              "image_allowed_hosts": "Erlaubte Hosts für Bild-Proxy"
             },
             "data_description": {
-              "image_cache_disk": "Poster-Bilder auf der Festplatte speichern, damit sie HA-Neustarts überdauern. Bilder werden alle 7 Tage gegen die Quelle geprüft und bei Bedarf aktualisiert. Cache gespeichert in .storage/harr/image_cache/."
+              "image_cache_disk": "Poster-Bilder auf der Festplatte speichern, damit sie HA-Neustarts überdauern. Bilder werden alle 7 Tage gegen die Quelle geprüft und bei Bedarf aktualisiert. Cache gespeichert in .storage/harr/image_cache/.",
+              "image_allowed_hosts": "Kommagetrennte Liste von Hostnamen, von denen der Bild-Proxy Bilder abrufen darf. Bei leerem Feld werden die Standardwerte verwendet."
             }
           }
         }
