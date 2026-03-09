@@ -203,12 +203,9 @@ class HarrDiscover extends BaseSection {
       raw.lastAirDate  ? { label: "Last Air Date",  val: raw.lastAirDate  } : null,
     ].filter(Boolean);
     const datesHtml = datePairs.length
-      ? `<div style="font-size:12px;margin-bottom:10px">${datePairs.map(({ label, val }) =>
-          `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
-             <span style="color:var(--harr-text-secondary,#9e9e9e)">${label}</span>
-             <span>${_fmtDate(val)}</span>
-           </div>`
-        ).join("")}</div>`
+      ? `<div class="cast-container"><div class="date-scroll">${datePairs.map(({ label, val }) =>
+          `<div class="date-chip"><span class="date-chip-label">${label}</span><span class="date-chip-value">${_fmtDate(val)}</span></div>`
+        ).join("")}</div></div>`
       : "";
     const rawMediaUrl = raw.mediaInfo?.mediaUrl || "";
     const mediaUrl = rawMediaUrl.startsWith("https://") ? rawMediaUrl : "";
@@ -247,6 +244,7 @@ class HarrDiscover extends BaseSection {
         ${alreadyAvailable ? `<div style="color:#4caf50;font-size:13px;margin-bottom:12px">Available</div>` : ""}
         ${alreadyPartial   ? `<div style="color:#2196f3;font-size:13px;margin-bottom:12px">Partially Available</div>` : ""}
         ${alreadyRequested ? `<div style="color:#ff9800;font-size:13px;margin-bottom:12px">Requested / Processing</div>` : ""}
+        <div id="cast-section"></div>
         <div id="request-options" style="display:none"></div>
         <div class="modal-actions">
           <button class="btn-secondary" id="cancel-btn">Close</button>
@@ -344,6 +342,39 @@ class HarrDiscover extends BaseSection {
     }
 
     shadow.appendChild(overlay);
+
+    // Async: load cast without blocking modal display
+    this._loadCast(overlay, raw.id, mediaType);
+  }
+
+  async _loadCast(overlay, tmdbId, mediaType) {
+    const section = overlay.querySelector("#cast-section");
+    if (!section) return;
+    try {
+      const path = mediaType === "tv" ? "tv" : "movie";
+      const detail = await harrFetch(this._hass, `${BASE}/api/v1/${path}/${tmdbId}`);
+      const cast = (detail?.credits?.cast || []).slice(0, 10);
+      if (!cast.length) return;
+      section.innerHTML = `
+        <div class="section-header">Cast</div>
+        <div class="cast-container"><div class="cast-scroll">
+          ${cast.map(m => {
+            const imgUrl = m.profilePath
+              ? proxyImageUrl(`https://image.tmdb.org/t/p/w185${m.profilePath}`)
+              : null;
+            const initials = (m.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+            return `<div class="cast-member">
+              <div class="cast-avatar">
+                ${imgUrl
+                  ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.parentNode.textContent='${initials}'">`
+                  : initials}
+              </div>
+              <div class="cast-name">${_esc(m.name || "")}</div>
+              ${m.character ? `<div class="cast-char">${_esc(m.character)}</div>` : ""}
+            </div>`;
+          }).join("")}
+        </div></div>`;
+    } catch { /* silently omit cast on error */ }
   }
 }
 

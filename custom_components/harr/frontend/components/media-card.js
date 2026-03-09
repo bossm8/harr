@@ -357,16 +357,34 @@ const CARD_STYLES = `
     margin-top: 6px;
   }
 
-  .release-date-row {
+  .date-scroll {
     display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    color: var(--primary-text-color, #e1e1e1);
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 2px 10px;
+    justify-content: center;
   }
-  .release-date-label { color: var(--harr-text-secondary, #9e9e9e); }
-  .release-dates-block { margin-bottom: 16px; }
+  .date-scroll::-webkit-scrollbar { display: none; }
+  .date-chip {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .date-chip-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    font-weight: 600;
+  }
+  .date-chip-value { font-size: 12px; white-space: nowrap; }
   .sub-langs { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 0 10px; }
   .sub-lang {
     display: inline-flex;
@@ -403,7 +421,8 @@ const CARD_STYLES = `
     flex-shrink: 0;
     align-self: flex-start;
   }
-  .genre-pills { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 0 12px; }
+  .genre-pills { display: flex; flex-wrap: nowrap; gap: 5px; overflow-x: auto; scrollbar-width: none; padding: 6px 0 12px; }
+  .genre-pills::-webkit-scrollbar { display: none; }
   .genre-pill {
     display: inline-flex;
     align-items: center;
@@ -492,6 +511,81 @@ const CARD_STYLES = `
   }
   .ep-sub-chip.have    { background: rgba(76,175,80,0.15);   color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
   .ep-sub-chip.missing { background: rgba(255,255,255,0.06); color: var(--harr-text-secondary,#9e9e9e); border: 1px solid rgba(255,255,255,0.15); }
+
+  /* ── Cast row ── */
+  .cast-container {
+    position: relative;
+  }
+  .cast-container::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 10px;
+    width: 48px;
+    background: linear-gradient(to right, transparent, var(--harr-card-bg, #1c1c1c));
+    pointer-events: none;
+    z-index: 1;
+  }
+  .cast-scroll {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 2px 10px;
+    margin-bottom: 4px;
+  }
+  .cast-scroll::-webkit-scrollbar { display: none; }
+
+  .cast-member {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    width: 62px;
+    text-align: center;
+  }
+
+  .cast-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--harr-text-secondary, #9e9e9e);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .cast-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .cast-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary-text-color, #e1e1e1);
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .cast-char {
+    font-size: 10px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
 
   /* ── Mobile ── */
   @media (max-width: 480px) {
@@ -733,7 +827,7 @@ class HarrMediaCard extends HTMLElement {
 
     const genres = (raw.genres || []).map((g) => (typeof g === "string" ? g : g.name)).filter(Boolean);
     const genreHtml = genres.length
-      ? `<div class="genre-pills">${genres.map((g) => `<span class="genre-pill">${_esc(g)}</span>`).join("")}</div>`
+      ? `<div class="cast-container"><div class="genre-pills">${genres.map((g) => `<span class="genre-pill">${_esc(g)}</span>`).join("")}</div></div>`
       : "";
 
     const _fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
@@ -750,9 +844,9 @@ class HarrMediaCard extends HTMLElement {
         ].filter(d => d.val);
     const releaseDatesHtml = datePairs.length
       ? `<div class="section-divider">${this._service === "radarr" ? "Release Dates" : "Air Dates"}</div>
-         <div class="release-dates-block">${datePairs.map(({ label, val }) =>
-           `<div class="release-date-row"><span class="release-date-label">${label}</span><span>${_fmtDate(val)}</span></div>`
-         ).join("")}</div>`
+         <div class="cast-container"><div class="date-scroll">${datePairs.map(({ label, val }) =>
+           `<div class="date-chip"><span class="date-chip-label">${label}</span><span class="date-chip-value">${_fmtDate(val)}</span></div>`
+         ).join("")}</div></div>`
       : "";
 
     const overlay = document.createElement("div");
@@ -764,8 +858,6 @@ class HarrMediaCard extends HTMLElement {
           ${posterHtml}
           <p class="manage-overview">${_esc(raw.overview || "")}</p>
         </div>
-        ${genreHtml}
-        ${releaseDatesHtml}
         <div id="manage-body">
           <div class="modal-loading"><div class="spinner"></div> Loading profiles…</div>
         </div>
@@ -791,6 +883,9 @@ class HarrMediaCard extends HTMLElement {
 
     const body = overlay.querySelector("#manage-body");
     body.innerHTML = `
+      ${genreHtml}
+      ${releaseDatesHtml}
+      <div id="cast-section"></div>
       <div class="field">
         <label>Quality Profile</label>
         <select id="qp-select">${profileOptions}</select>
@@ -832,6 +927,9 @@ class HarrMediaCard extends HTMLElement {
         <button class="btn-primary" id="save-btn">Save</button>
       </div>
     `;
+
+    // Now that body.innerHTML is set, #cast-section exists — load cast async
+    this._loadManageCast(overlay, raw);
 
     if (!isShow) this._renderMovieFile(body.querySelector("#file-section"), raw);
     if (isShow)  this._loadEpisodesSection(body.querySelector("#episodes-section"), cfg, raw);
@@ -1070,7 +1168,7 @@ class HarrMediaCard extends HTMLElement {
     const hasBazarr = Object.keys(bazarrMap).length > 0;
 
     let html = `<div class="section-divider">Episodes</div>`;
-    for (const [si, seasonNum] of seasons.entries()) {
+    for (const seasonNum of seasons) {
       const eps = seasonMap.get(seasonNum).sort((a, b) => a.episodeNumber - b.episodeNumber);
       const downloaded = eps.filter(e => e.hasFile).length;
       const label = seasonNum === 0 ? "Specials" : `Season ${seasonNum}`;
@@ -1079,7 +1177,6 @@ class HarrMediaCard extends HTMLElement {
       // Season monitor state from the series object
       const rawSeason = raw.seasons?.find(s => s.seasonNumber === seasonNum);
       const isMonitored = rawSeason?.monitored ?? true;
-      const monColor = isMonitored ? "#4caf50" : "#9e9e9e";
       const monLabel = isMonitored ? "● Mon" : "○ Mon";
 
       let epCards = "";
@@ -1184,9 +1281,10 @@ class HarrMediaCard extends HTMLElement {
           // Update raw.seasons in place so subsequent toggles reflect correct state
           const rs = raw.seasons.find(s => s.seasonNumber === sNum);
           if (rs) rs.monitored = newMon;
-          btn.dataset.monitored = String(newMon);
-          btn.classList.toggle("monitored", newMon);
-          btn.textContent = `${newMon ? "●" : "○"} Mon`;
+          // Close modal and reload parent so propagated episode monitor states are visible
+          const ov = btn.closest(".modal-overlay");
+          if (ov) ov.remove();
+          this.dispatchEvent(new CustomEvent("harr-manage-done", { bubbles: true, composed: true }));
         } catch (err) {
           this._modalToast(
             container.closest(".modal-overlay"),
@@ -1234,6 +1332,9 @@ class HarrMediaCard extends HTMLElement {
           btn.dataset.monitored = String(newMon);
           btn.textContent = newMon ? "●" : "○";
           btn.classList.toggle("monitored", newMon);
+          // Keep local data consistent for further interactions in the same session
+          const epObj = episodes.find(e => e.id === epId);
+          if (epObj) epObj.monitored = newMon;
         } catch (err) {
           this._modalToast(container.closest(".modal-overlay"), `Monitor update failed: ${err.message}`, true);
         }
@@ -1343,17 +1444,45 @@ class HarrMediaCard extends HTMLElement {
     });
   }
 
-  _modalToast(overlay, msg, isError = false) {
-    const t = document.createElement("div");
-    t.style.cssText = `
-      margin-top: 12px; padding: 8px 14px; border-radius: 8px; font-size: 13px;
-      background: ${isError ? "rgba(244,67,54,0.15)" : "rgba(76,175,80,0.15)"};
-      border: 1px solid ${isError ? "rgba(244,67,54,0.4)" : "rgba(76,175,80,0.4)"};
-      color: ${isError ? "#f44336" : "#4caf50"};
-    `;
-    t.textContent = msg;
-    overlay.querySelector(".modal").appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+  async _loadManageCast(overlay, raw) {
+    const section = overlay.querySelector("#cast-section");
+    if (!section) return;
+    try {
+      const harrCfg = await getHarrConfig(this._hass);
+      if (!harrCfg.seerr || !raw.tmdbId) return;
+      const mediaType = this._service === "sonarr" ? "tv" : "movie";
+      const detail = await harrFetch(this._hass, `/api/harr/seerr/api/v1/${mediaType}/${raw.tmdbId}`);
+      const cast = (detail?.credits?.cast || []).slice(0, 10);
+      if (!cast.length) return;
+      section.innerHTML = `
+        <div class="section-divider">Cast</div>
+        <div class="cast-container"><div class="cast-scroll">
+          ${cast.map(m => {
+            const imgUrl = m.profilePath
+              ? proxyImageUrl(`https://image.tmdb.org/t/p/w185${m.profilePath}`)
+              : null;
+            const initials = (m.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+            return `<div class="cast-member">
+              <div class="cast-avatar">
+                ${imgUrl
+                  ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.parentNode.textContent='${initials}'">`
+                  : initials}
+              </div>
+              <div class="cast-name">${_esc(m.name || "")}</div>
+              ${m.character ? `<div class="cast-char">${_esc(m.character)}</div>` : ""}
+            </div>`;
+          }).join("")}
+        </div></div>`;
+    } catch { /* silently omit cast on error */ }
+  }
+
+  _modalToast(_overlay, msg, isError = false) {
+    // Bubble up to the parent section's _toast() via harr-toast event
+    this.dispatchEvent(new CustomEvent("harr-toast", {
+      detail: { msg, type: isError ? "error" : "success" },
+      bubbles: true,
+      composed: true,
+    }));
   }
 }
 

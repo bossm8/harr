@@ -148,25 +148,44 @@ export const SECTION_STYLES = `
 
   .toast {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    left: 50%;
+    transform: translateX(-50%);
     background: var(--harr-card-bg, #2a2a2a);
     border: 1px solid var(--harr-border, rgba(255,255,255,0.15));
     border-radius: 10px;
-    padding: 12px 20px;
+    padding: 11px 12px 11px 18px;
     font-size: 13px;
     color: var(--primary-text-color, #e1e1e1);
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     z-index: 9999;
-    animation: fadeInUp 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+    max-width: calc(100vw - 32px);
+    animation: slideDown 0.25s ease;
   }
 
   .toast.success { border-color: #4caf50; color: #4caf50; }
   .toast.error   { border-color: #f44336; color: #f44336; }
 
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .toast-close {
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.6;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .toast-close:hover { opacity: 1; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 
   /* Modal overlay */
@@ -260,6 +279,116 @@ export const SECTION_STYLES = `
     padding: 12px 0 6px;
   }
 
+  /* ── Cast row ── */
+  .cast-container {
+    position: relative;
+  }
+  .cast-container::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 10px;
+    width: 48px;
+    background: linear-gradient(to right, transparent, var(--harr-card-bg, #1c1c1c));
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .cast-scroll {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 2px 10px;
+    margin-bottom: 4px;
+  }
+  .cast-scroll::-webkit-scrollbar { display: none; }
+
+  .cast-member {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    width: 62px;
+    text-align: center;
+  }
+
+  .cast-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--harr-text-secondary, #9e9e9e);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .cast-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .cast-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary-text-color, #e1e1e1);
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .cast-char {
+    font-size: 10px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* ── Horizontal metadata rows ── */
+  .date-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 2px 10px;
+    justify-content: center;
+  }
+  .date-scroll::-webkit-scrollbar { display: none; }
+  .date-chip {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .date-chip-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    font-weight: 600;
+  }
+  .date-chip-value {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
   /* ── Mobile ── */
   @media (max-width: 480px) {
     .content { padding: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom, 8px)); }
@@ -349,6 +478,61 @@ export const EXTRA_STYLES = `
     overflow: hidden;
   }
 
+  /* ── Search result detail preview ── */
+  .btn-back {
+    background: none;
+    border: none;
+    color: var(--harr-accent, #e5a00d);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .result-detail-header {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .result-detail-poster {
+    width: 80px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.06);
+  }
+  .result-detail-poster-ph {
+    width: 80px;
+    height: 120px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .result-detail-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .result-detail-genres {
+    font-size: 12px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    margin-bottom: 6px;
+  }
+  .result-detail-overview {
+    font-size: 13px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    line-height: 1.5;
+    margin: 0 0 10px;
+  }
+
   .modal-loading {
     display: flex;
     align-items: center;
@@ -396,6 +580,11 @@ export class BaseSection extends HTMLElement {
     this._hass = null;
     this._loading = false;
     this._error = null;
+    // Catch harr-toast events dispatched by child components (e.g. harr-media-card)
+    this.addEventListener("harr-toast", (e) => {
+      this._toast(e.detail.msg, e.detail.type || "info");
+      e.stopPropagation();
+    });
   }
 
   set hass(value) {
@@ -428,7 +617,8 @@ export class BaseSection extends HTMLElement {
   _toast(msg, type = "info", duration = 3000) {
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
-    toast.textContent = msg;
+    toast.innerHTML = `<span class="toast-msg">${msg}</span><button class="toast-close" aria-label="Dismiss">✕</button>`;
+    toast.querySelector(".toast-close").addEventListener("click", () => toast.remove());
     this.shadowRoot.appendChild(toast);
     setTimeout(() => toast.remove(), duration);
   }

@@ -3,7 +3,7 @@
  * Shows the Radarr library with a poster grid and allows adding new movies.
  */
 
-import { BaseSection, SECTION_STYLES, EXTRA_STYLES, harrFetch, proxyImageUrl } from "./_base-section.js";
+import { BaseSection, SECTION_STYLES, EXTRA_STYLES, harrFetch, getHarrConfig, proxyImageUrl } from "./_base-section.js";
 import "../components/media-card.js";
 
 const BASE = "/api/harr/radarr";
@@ -233,13 +233,87 @@ class HarrMovies extends BaseSection {
       </div>
     `;
 
-    body.querySelectorAll(".result-item").forEach((el) => {
-      el.addEventListener("click", () => {
-        body.querySelectorAll(".result-item").forEach((r) => r.classList.remove("selected"));
-        el.classList.add("selected");
-        this._selectedResult = results[parseInt(el.dataset.idx, 10)];
+    const attachClicks = () => {
+      body.querySelectorAll(".result-item").forEach((el) => {
+        el.addEventListener("click", () => {
+          const idx = parseInt(el.dataset.idx, 10);
+          this._selectedResult = results[idx];
+          showDetail(idx);
+        });
       });
-    });
+    };
+
+    const showDetail = (idx) => {
+      const m = results[idx];
+      const poster = (m.images || []).find(i => i.coverType === "poster");
+      const imgSrc = proxyImageUrl(poster?.remoteUrl || poster?.url || null);
+      const posterHtml = imgSrc
+        ? `<img class="result-detail-poster" src="${_esc(imgSrc)}" alt="" loading="lazy">`
+        : `<div class="result-detail-poster-ph">🎬</div>`;
+      const genres = (m.genres || []).join(", ");
+
+      const _fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      const datePairs = [
+        m.inCinemas       ? { label: "Cinema",   val: m.inCinemas       } : null,
+        m.digitalRelease  ? { label: "Digital",  val: m.digitalRelease  } : null,
+        m.physicalRelease ? { label: "Physical", val: m.physicalRelease } : null,
+      ].filter(Boolean);
+      const datesHtml = datePairs.length
+        ? `<div class="cast-container"><div class="date-scroll">${datePairs.map(({ label, val }) =>
+            `<div class="date-chip"><span class="date-chip-label">${label}</span><span class="date-chip-value">${_fmtDate(val)}</span></div>`
+          ).join("")}</div></div>`
+        : "";
+
+      const field = body.querySelector(".result-list").closest(".field");
+      field.innerHTML = `
+        <button class="btn-back">← Results</button>
+        <div class="result-detail-header">
+          ${posterHtml}
+          <div>
+            <div class="result-detail-title">${_esc(m.title)} <span style="font-weight:400;color:var(--harr-text-secondary,#9e9e9e)">(${m.year || "?"})</span></div>
+            ${genres ? `<div class="result-detail-genres">${_esc(genres)}</div>` : ""}
+          </div>
+        </div>
+        <p class="result-detail-overview">${_esc(m.overview || "")}</p>
+        ${datesHtml}
+        <div id="detail-cast-section"></div>
+      `;
+
+      // Async cast via Jellyseerr
+      if (m.tmdbId) {
+        (async () => {
+          const castSection = field.querySelector("#detail-cast-section");
+          if (!castSection) return;
+          try {
+            const cfg = await getHarrConfig(this._hass);
+            if (!cfg.seerr) return;
+            const detail = await harrFetch(this._hass, `/api/harr/seerr/api/v1/movie/${m.tmdbId}`);
+            const cast = (detail?.credits?.cast || []).slice(0, 10);
+            if (!cast.length) return;
+            castSection.innerHTML = `
+              <div class="section-header">Cast</div>
+              <div class="cast-container"><div class="cast-scroll">
+                ${cast.map(p => {
+                  const imgUrl = p.profilePath ? proxyImageUrl(`https://image.tmdb.org/t/p/w185${p.profilePath}`) : null;
+                  const initials = (p.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+                  return `<div class="cast-member">
+                    <div class="cast-avatar">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.parentNode.textContent='${initials}'">` : initials}</div>
+                    <div class="cast-name">${_esc(p.name || "")}</div>
+                    ${p.character ? `<div class="cast-char">${_esc(p.character)}</div>` : ""}
+                  </div>`;
+                }).join("")}
+              </div></div>`;
+          } catch { /* silently omit */ }
+        })();
+      }
+
+      field.querySelector(".btn-back").addEventListener("click", () => {
+        field.innerHTML = `<label>Search Result</label><div class="result-list">${resultItemsHtml}</div>`;
+        attachClicks();
+      });
+    };
+
+    attachClicks();
 
     body.querySelector("#cancel-btn").addEventListener("click", () => overlay.remove());
 
