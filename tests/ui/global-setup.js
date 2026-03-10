@@ -19,14 +19,8 @@ const HA_URL = process.env.HA_URL || "http://home-assistant:8123";
 const HA_USER = process.env.HA_USER || "admin";
 const HA_PASS = process.env.HA_PASS || "admin";
 
-module.exports = async function globalSetup() {
-  const browser = await chromium.launch({ args: ["--no-proxy-server"] });
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
+async function wait_for_ha(page) {
   // Retry navigation until HA's HTTP server is up.
-  // HA is started in the background; npm ci + playwright install provide
-  // some buffer, but we poll to handle slow runners.
   for (let i = 0; i < 90; i++) {
     try {
       const resp = await page.goto(HA_URL, {
@@ -39,6 +33,14 @@ module.exports = async function globalSetup() {
     }
     await new Promise((r) => setTimeout(r, 2_000));
   }
+}
+
+module.exports = async function globalSetup() {
+  const browser = await chromium.launch({ args: ["--no-proxy-server"], headless: true });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  await wait_for_ha(page)
 
   // Wait for HA's SPA to client-side-navigate to either onboarding or auth.
   await page.waitForURL(
@@ -47,18 +49,6 @@ module.exports = async function globalSetup() {
       url.pathname.startsWith("/auth"),
     { timeout: 60_000 }
   );
-
-  // On a fresh HA install the SPA visits /auth/authorize briefly as an
-  // intermediate step before redirecting to /onboarding.  Give it up to 15 s
-  // to complete that redirect so we don't mis-classify a fresh install as an
-  // existing one and then try (and fail) to log in with invalid credentials.
-  if (!page.url().includes("/onboarding")) {
-    await page
-      .waitForURL((url) => url.pathname.startsWith("/onboarding"), {
-        timeout: 15_000,
-      })
-      .catch(() => {}); // URL stayed at /auth — existing install, that's fine
-  }
 
   if (page.url().includes("/onboarding")) {
     // ── Fresh install: drive the onboarding wizard ─────────────────────────
@@ -73,27 +63,21 @@ module.exports = async function globalSetup() {
     await page.getByRole("button", { name: "Create account" }).click();
 
     // Click through remaining steps (location, analytics, finish, …) dynamically.
-    // Each iteration waits to see if we've left onboarding; if not, it waits
-    // for the next forward button and clicks it.
+    // Each iteration waits briefly for any transition to settle, then clicks the
+    // first visible forward-action button.  Stops when no such button is found,
+    // which means onboarding is complete (page.goto below re-navigates to login).
     for (let step = 0; step < 10; step++) {
-      const done = await page
-        .waitForURL(
-          (url) =>
-            !url.pathname.startsWith("/onboarding") &&
-            !url.pathname.startsWith("/auth"),
-          { timeout: 5_000 }
-        )
-        .then(() => true)
-        .catch(() => false);
-      if (done) break;
+      await page.waitForTimeout(3_000);
 
-      const btn = page.getByRole("button", { name: /next|finish|done/i }).first();
-      await btn.waitFor({ state: "visible", timeout: 10_000 });
+      const btn = page
+        .getByRole("button", { name: /next|finish/i })
+        .first();
+      if (!(await btn.isVisible())) break;
       await btn.click();
     }
   }
 
-  await page.goto(HA_URL)
+  await wait_for_ha(page)
 
   // ── Standard login form ──────────────────────────────
   await page.waitForURL("**/auth/authorize**", { timeout: 15_000 });
