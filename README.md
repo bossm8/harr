@@ -1,6 +1,6 @@
 # Harr
 
-<p align="center"><img src="./assets/logo.png" alt="harr"/></p>
+<p align="center"><img src="./assets/logo.png" alt="harr" width="25%"/></p>
 
 > [!CAUTION]
 > **Personal hobby project — use at your own risk.**
