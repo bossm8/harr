@@ -64,18 +64,41 @@ def _is_safe_url(url: str, allowed_hosts: frozenset[str]) -> bool:
     return parsed.scheme == "https" and parsed.hostname in allowed_hosts
 
 
-async def _resolve_is_public(hostname: str) -> bool:
-    """Layer 3: resolve hostname; return False if any address is private/reserved."""
-    try:
-        loop = asyncio.get_event_loop()
-        infos = await loop.run_in_executor(None, socket.getaddrinfo, hostname, None)
-        for info in infos:
-            addr = ipaddress.ip_address(info[4][0])
-            if any(addr in net for net in _PRIVATE_NETWORKS):
-                return False
-        return bool(infos)
-    except Exception:
-        return False
+async def _resolve_and_verify(hostname: str) -> str:
+    """Resolve hostname once, verify all addresses are public, return first IP string.
+
+    Raises ValueError if the hostname resolves to a private/reserved address or
+    cannot be resolved. Callers pass the returned IP to _upstream_fetch() so
+    aiohttp never performs a second independent DNS lookup (preventing rebinding).
+    """
+    loop = asyncio.get_event_loop()
+    infos = await loop.run_in_executor(None, socket.getaddrinfo, hostname, None)
+    if not infos:
+        raise ValueError(f"No DNS records for {hostname!r}")
+    for _, _, _, _, sockaddr in infos:
+        addr = ipaddress.ip_address(sockaddr[0])
+        if any(addr in net for net in _PRIVATE_NETWORKS):
+            raise ValueError(f"Hostname {hostname!r} resolves to private address {addr}")
+    return str(ipaddress.ip_address(infos[0][4][0]))
+
+
+class _FixedResolver(aiohttp.abc.AbstractResolver):
+    """aiohttp resolver that always returns a pre-resolved IP.
+
+    Passing this to TCPConnector ensures the connector uses our verified
+    address without performing a second DNS lookup.  The original hostname
+    is kept in the URL so TLS SNI and Host-header validation work correctly.
+    """
+
+    def __init__(self, ip: str) -> None:
+        self._ip = ip
+
+    async def resolve(self, host: str, port: int = 0, family: int = socket.AF_UNSPEC):
+        return [{"hostname": host, "host": self._ip, "port": port,
+                 "family": socket.AF_INET, "proto": 0, "flags": 0}]
+
+    async def close(self) -> None:
+        pass
 
 
 class ImageProxyView(HomeAssistantView):
@@ -105,10 +128,14 @@ class ImageProxyView(HomeAssistantView):
             _LOGGER.debug("Image proxy: rejected unsafe URL: %s", image_url)
             return web.Response(status=400)
 
-        # Layer 3: DNS rebinding guard — resolved IP must not be private/reserved
+        # Layer 3: DNS rebinding guard — resolve once, verify public, reuse the
+        # same IP for the actual fetch so aiohttp cannot re-resolve to a private
+        # address between check and use (TOCTOU / DNS rebinding).
         hostname = urlparse(image_url).hostname
-        if not await _resolve_is_public(hostname):
-            _LOGGER.debug("Image proxy: rejected DNS rebinding attempt: %s", image_url)
+        try:
+            resolved_ip = await _resolve_and_verify(hostname)
+        except (ValueError, OSError) as exc:
+            _LOGGER.debug("Image proxy: rejected DNS rebinding attempt: %s — %s", image_url, exc)
             return web.Response(status=400)
 
         hass = request.app["hass"]
@@ -129,9 +156,9 @@ class ImageProxyView(HomeAssistantView):
                 self._mem_put(image_url, data, ct)
                 return self._ok(data, ct)
 
-        # L3: upstream fetch
+        # L3: upstream fetch — pass the pre-resolved IP to prevent re-resolution
         _LOGGER.debug("Image cache L3 fetch (upstream): %s", image_url)
-        fetched = await self._upstream_fetch(image_url)
+        fetched = await self._upstream_fetch(image_url, resolved_ip=resolved_ip)
         if fetched is None:
             return web.Response(status=502)
         data, ct, etag, last_modified = fetched
@@ -172,8 +199,13 @@ class ImageProxyView(HomeAssistantView):
         url: str,
         etag: str | None = None,
         last_modified: str | None = None,
+        resolved_ip: str | None = None,
     ) -> tuple[bytes, str, str | None, str | None] | tuple[None, str, None, None] | None:
         """Fetch url from upstream.
+
+        If resolved_ip is given, a _FixedResolver is used so that aiohttp
+        connects to that pre-verified IP instead of performing a second DNS
+        lookup (prevents DNS rebinding between check and use).
 
         Returns:
           (data, content_type, etag, last_modified)  — new/updated content
@@ -186,8 +218,13 @@ class ImageProxyView(HomeAssistantView):
         if last_modified:
             headers["If-Modified-Since"] = last_modified
 
+        connector = (
+            aiohttp.TCPConnector(resolver=_FixedResolver(resolved_ip))
+            if resolved_ip
+            else None
+        )
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(connector=connector) as session:
                 async with session.get(
                     url,
                     headers=headers,

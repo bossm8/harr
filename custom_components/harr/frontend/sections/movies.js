@@ -297,12 +297,15 @@ class HarrMovies extends BaseSection {
                   const imgUrl = p.profilePath ? proxyImageUrl(`https://image.tmdb.org/t/p/w185${p.profilePath}`) : null;
                   const initials = (p.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
                   return `<div class="cast-member">
-                    <div class="cast-avatar">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.parentNode.textContent='${initials}'">` : initials}</div>
+                    <div class="cast-avatar">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" data-initials="${_esc(initials)}">` : _esc(initials)}</div>
                     <div class="cast-name">${_esc(p.name || "")}</div>
                     ${p.character ? `<div class="cast-char">${_esc(p.character)}</div>` : ""}
                   </div>`;
                 }).join("")}
               </div></div>`;
+            castSection.querySelectorAll("img[data-initials]").forEach(img => {
+              img.addEventListener("error", () => { img.parentNode.textContent = img.dataset.initials; });
+            });
           } catch { /* silently omit */ }
         })();
       }

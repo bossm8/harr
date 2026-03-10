@@ -15,7 +15,7 @@ The devcontainer (`/.devcontainer/`) provides a full development environment:
 
 To test changes: restart the `home-assistant` container (HA must reload to pick up Python changes; JS is served statically and reloads on browser refresh).
 
-There are no build steps, no test suite, and no linter configuration. The integration installs directly from `custom_components/harr/`.
+There are no build steps and no linter configuration. The integration installs directly from `custom_components/harr/`.
 
 ## Architecture
 
@@ -45,6 +45,20 @@ No build tooling. Plain ES modules loaded directly by the browser.
 - **`components/`** — Reusable elements: `media-card.js`, `download-item.js`, `request-item.js`, `icons.js`.
 
 Make sure to follow UI and UX best practices seen in streaming apps like Netflix, Disney+ etc. For reactive apps functioning in browser and on mobile.
+
+## Testing
+
+**Always write tests** for every new feature or bug fix:
+
+- **Backend changes** — add/update tests in `tests/` using `pytest` + `pytest-homeassistant-custom-component`
+  - Run: `pip install -r requirements-test.txt && pytest tests/ -v`
+  - Coverage: `pytest tests/ --cov=custom_components/harr --cov-report=term-missing`
+- **Frontend/UI changes** — add/update tests in `tests/ui/` using Playwright
+  - Requires the `home-assistant` devcontainer to be running at `http://localhost:8123`
+  - Run: `cd tests/ui && npx playwright test`
+  - Install browsers once: `cd tests/ui && npx playwright install chromium`
+
+CI runs automatically on push/PR via `.github/workflows/ci.yml`. Never merge a feature without accompanying tests and a green CI run.
 
 ### Adding a New Service
 

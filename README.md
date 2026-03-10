@@ -1,6 +1,6 @@
 # Harr
 
-<p align="center"><img src="./custom_components/harr/brand/icon.png" alt="harr"/></p>
+<p align="center"><img src="./assets/logo.png" alt="harr"/></p>
 
 > [!CAUTION]
 > **Personal hobby project — use at your own risk.**
@@ -25,7 +25,7 @@ All services are **optional** — configure only the ones you use.
 
 ## Requirements
 
-- Tested with Home Assistant **2026.2.3+**
+- Tested with Home Assistant **2026.3.1+**
 - The services you want to manage must be reachable from the HA host
 
 ---
