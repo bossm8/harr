@@ -14,6 +14,8 @@
 
 import { harrFetch, getHarrConfig, proxyImageUrl } from "../sections/_base-section.js";
 
+const TRASH_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+
 const SERVICE_CONFIG = {
   radarr: {
     base: "/api/harr/radarr",
@@ -333,18 +335,56 @@ const CARD_STYLES = `
     font-size: 13px;
   }
 
-  .delete-confirm {
+  .confirm-popup-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(244,67,54,0.08);
-    border: 1px solid rgba(244,67,54,0.25);
-    border-radius: 8px;
-    margin-top: 12px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(2px);
+    border-radius: inherit;
   }
-  .delete-confirm p { margin: 0; font-size: 13px; color: #f44336; }
-  .delete-confirm .dc-btns { display: flex; gap: 8px; }
+  .confirm-popup {
+    background: var(--harr-card-bg, #1c1c1c);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 20px 24px;
+    max-width: 300px;
+    width: 90%;
+  }
+  .confirm-popup-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: var(--primary-text-color, #e1e1e1);
+    word-break: break-word;
+  }
+  .confirm-popup-msg {
+    font-size: 13px;
+    color: var(--harr-text-secondary, #9e9e9e);
+    margin: 0;
+  }
+  .confirm-popup-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-danger-sm {
+    background: none;
+    border: none;
+    color: #f44336;
+    padding: 4px;
+    cursor: pointer;
+    line-height: 0;
+    flex-shrink: 0;
+  }
+  .btn-danger-sm:hover { background: rgba(244,67,54,0.15); border-radius: 4px; }
+  .btn-danger-sm:disabled { opacity: 0.5; cursor: default; }
 
   .section-divider {
     font-size: 11px;
@@ -450,6 +490,22 @@ const CARD_STYLES = `
   }
   .btn-subtitle:hover { background: rgba(229,160,13,0.1); }
   .btn-subtitle:disabled { opacity: 0.5; cursor: default; }
+
+  .btn-search-sm {
+    background: none;
+    border: none;
+    color: var(--harr-text-secondary, #9e9e9e);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-search-sm:hover { color: var(--harr-accent, #e5a00d); background: rgba(229,160,13,0.08); }
+  .btn-search-sm:disabled { opacity: 0.5; cursor: default; }
   .bazarr-na { font-size: 12px; color: var(--harr-text-secondary, #9e9e9e); padding: 4px 0; }
 
   /* ── Episode accordion ── */
@@ -919,7 +975,6 @@ class HarrMediaCard extends HTMLElement {
         <div class="section-divider">Subtitles</div>
         <div class="modal-loading" style="padding:8px 0"><div class="spinner"></div> Checking…</div>
       </div>
-      <div id="delete-section"></div>
       <div class="modal-actions">
         <button class="btn-secondary" id="close-btn">Close</button>
         <button class="btn-secondary" id="search-btn">Search Now</button>
@@ -1079,30 +1134,27 @@ class HarrMediaCard extends HTMLElement {
       }
     });
 
-    body.querySelector("#delete-btn").addEventListener("click", () => {
-      const section = body.querySelector("#delete-section");
-      section.innerHTML = `
-        <div class="delete-confirm">
-          <p>Also delete files from disk?</p>
-          <div class="dc-btns">
-            <button class="btn-secondary" id="del-keep">No, keep files</button>
-            <button class="btn-danger" id="del-files">Yes, delete files</button>
-          </div>
-        </div>
-      `;
-      const doDelete = async (deleteFiles) => {
-        try {
-          await harrFetch(this._hass, `${cfg.base}/api/v3/${cfg.itemPath}/${raw.id}?deleteFiles=${deleteFiles}`, {
-            method: "DELETE",
-          });
-          overlay.remove();
-          this.dispatchEvent(new CustomEvent("harr-manage-done", { bubbles: true, composed: true }));
-        } catch (err) {
-          this._modalToast(overlay, `Delete failed: ${err.message}`, true);
-        }
-      };
-      section.querySelector("#del-keep").addEventListener("click", () => doDelete(false));
-      section.querySelector("#del-files").addEventListener("click", () => doDelete(true));
+    body.querySelector("#delete-btn").addEventListener("click", async () => {
+      const svcName = this._service === "radarr" ? "Radarr" : "Sonarr";
+      const deleteFiles = await this._showConfirmPopup(overlay, {
+        title: `Delete "${raw.title}"?`,
+        message: `Remove from ${svcName}. Also delete files from disk?`,
+        buttons: [
+          { label: "Cancel",         cls: "btn-secondary", value: null  },
+          { label: "Keep files",     cls: "btn-secondary", value: false },
+          { label: "Delete + files", cls: "btn-danger",    value: true  },
+        ],
+      });
+      if (deleteFiles === null) return;
+      try {
+        await harrFetch(this._hass, `${cfg.base}/api/v3/${cfg.itemPath}/${raw.id}?deleteFiles=${deleteFiles}`, {
+          method: "DELETE",
+        });
+        overlay.remove();
+        this.dispatchEvent(new CustomEvent("harr-manage-done", { bubbles: true, composed: true }));
+      } catch (err) {
+        this._modalToast(overlay, `Delete failed: ${err.message}`, true);
+      }
     });
   }
 
@@ -1235,8 +1287,9 @@ class HarrMediaCard extends HTMLElement {
               <span class="ep-num">E${num}</span>
               <span class="ep-title" title="${_esc(ep.title || "")}">${_esc(ep.title || "No title")}</span>
               ${fileIcon}
+              ${ef ? `<button class="btn-danger-sm" data-delete-ep-file="${ef.id}" data-ep-season="${ep.seasonNumber}" data-ep-num="${num}" title="Delete file">${TRASH_ICON}</button>` : ""}
               <button class="ep-mon-btn${ep.monitored ? ' monitored' : ''}" data-mon-ep="${ep.id}" data-monitored="${ep.monitored}" title="${ep.monitored ? 'Monitored — click to unmonitor' : 'Unmonitored — click to monitor'}">${ep.monitored ? '●' : '○'}</button>
-              <button class="btn-subtitle" data-epid="${ep.id}" style="padding:6px 10px;font-size:11px">Search</button>
+              <button class="btn-search-sm" data-epid="${ep.id}">Search</button>
             </div>
             ${airDateHtml}
             ${metaHtml}
@@ -1249,8 +1302,9 @@ class HarrMediaCard extends HTMLElement {
           <summary>
             ${_esc(label)}
             <span class="ep-season-count">${downloaded} / ${eps.length}</span>
+            ${downloaded > 0 ? `<button class="btn-danger-sm" data-delete-season="${seasonNum}" title="Delete all files for ${_esc(label)}">${TRASH_ICON}</button>` : ""}
             <button class="mon-indicator${isMonitored ? ' monitored' : ''}" data-monitor-season="${seasonNum}" data-monitored="${isMonitored}" title="Toggle season monitoring">${monLabel}</button>
-            <button class="btn-subtitle" data-season="${seasonNum}" style="padding:6px 10px;font-size:11px">Search</button>
+            <button class="btn-search-sm" data-season="${seasonNum}">Search</button>
           </summary>
           ${epCards}
         </details>`;
@@ -1358,6 +1412,73 @@ class HarrMediaCard extends HTMLElement {
         } catch {
           btn.disabled = false;
           btn.textContent = "Search";
+        }
+      });
+    });
+
+    // Season file deletion
+    container.querySelectorAll("[data-delete-season]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const sNum = parseInt(btn.dataset.deleteSeason, 10);
+        const label = sNum === 0 ? "Specials" : `Season ${sNum}`;
+        const fileIds = episodes
+          .filter(ep => ep.seasonNumber === sNum && ep.hasFile)
+          .map(ep => ep.episodeFileId)
+          .filter(Boolean);
+        if (!fileIds.length) return;
+        const overlay = btn.closest(".modal-overlay");
+        const confirmed = await this._showConfirmPopup(overlay, {
+          title: `Delete ${label} files?`,
+          message: `Delete all ${fileIds.length} downloaded file${fileIds.length !== 1 ? "s" : ""} for ${label}? This cannot be undone.`,
+          buttons: [
+            { label: "Cancel",       cls: "btn-secondary", value: null },
+            { label: "Delete files", cls: "btn-danger",    value: true },
+          ],
+        });
+        if (!confirmed) return;
+        btn.disabled = true;
+        try {
+          await harrFetch(this._hass, `${cfg.base}/api/v3/episodefile/bulk`, {
+            method: "DELETE",
+            body: JSON.stringify({ episodeFileIds: fileIds }),
+          });
+          await this._loadEpisodesSection(container, cfg, raw);
+        } catch (err) {
+          this._modalToast(overlay, `Delete failed: ${err.message}`, true);
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // Individual episode file deletion
+    container.querySelectorAll("[data-delete-ep-file]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const fileId = parseInt(btn.dataset.deleteEpFile, 10);
+        const sNum = btn.dataset.epSeason;
+        const eNum = btn.dataset.epNum;
+        const overlay = btn.closest(".modal-overlay");
+        const confirmed = await this._showConfirmPopup(overlay, {
+          title: "Delete episode file?",
+          message: `Delete the file for S${String(sNum).padStart(2, "0")}E${eNum}? This cannot be undone.`,
+          buttons: [
+            { label: "Cancel",      cls: "btn-secondary", value: null },
+            { label: "Delete file", cls: "btn-danger",    value: true },
+          ],
+        });
+        if (!confirmed) return;
+        btn.disabled = true;
+        try {
+          await harrFetch(this._hass, `${cfg.base}/api/v3/episodefile/${fileId}`, {
+            method: "DELETE",
+          });
+          await this._loadEpisodesSection(container, cfg, raw);
+        } catch (err) {
+          this._modalToast(overlay, `Delete failed: ${err.message}`, true);
+          btn.disabled = false;
         }
       });
     });
@@ -1474,6 +1595,29 @@ class HarrMediaCard extends HTMLElement {
           }).join("")}
         </div></div>`;
     } catch { /* silently omit cast on error */ }
+  }
+
+  _showConfirmPopup(overlay, { title, message, buttons }) {
+    return new Promise(resolve => {
+      const popupOverlay = document.createElement("div");
+      popupOverlay.className = "confirm-popup-overlay";
+      const btnsHtml = buttons.map(b =>
+        `<button class="${_esc(b.cls)}">${_esc(b.label)}</button>`
+      ).join("");
+      popupOverlay.innerHTML = `
+        <div class="confirm-popup">
+          ${title ? `<p class="confirm-popup-title">${_esc(title)}</p>` : ""}
+          <p class="confirm-popup-msg">${_esc(message)}</p>
+          <div class="confirm-popup-btns">${btnsHtml}</div>
+        </div>
+      `;
+      const close = (value) => { popupOverlay.remove(); resolve(value); };
+      popupOverlay.addEventListener("click", (e) => { if (e.target === popupOverlay) close(null); });
+      popupOverlay.querySelectorAll(".confirm-popup-btns button").forEach((btn, i) => {
+        btn.addEventListener("click", () => close(buttons[i].value));
+      });
+      overlay.appendChild(popupOverlay);
+    });
   }
 
   _modalToast(_overlay, msg, isError = false) {
