@@ -617,8 +617,17 @@ export class BaseSection extends HTMLElement {
   _toast(msg, type = "info", duration = 3000) {
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
-    toast.innerHTML = `<span class="toast-msg">${msg}</span><button class="toast-close" aria-label="Dismiss">✕</button>`;
-    toast.querySelector(".toast-close").addEventListener("click", () => toast.remove());
+    // Use DOM construction — never innerHTML — so msg cannot inject HTML/JS
+    const span = document.createElement("span");
+    span.className = "toast-msg";
+    span.textContent = msg;
+    const btn = document.createElement("button");
+    btn.className = "toast-close";
+    btn.setAttribute("aria-label", "Dismiss");
+    btn.textContent = "✕";
+    btn.addEventListener("click", () => toast.remove());
+    toast.appendChild(span);
+    toast.appendChild(btn);
     this.shadowRoot.appendChild(toast);
     setTimeout(() => toast.remove(), duration);
   }

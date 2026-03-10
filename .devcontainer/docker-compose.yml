@@ -86,8 +86,8 @@ services:
     container_name: harr
     user: root
     build:
-      context: .
-      dockerfile: Dev.Dockerfile
+      context: ../
+      dockerfile: .devcontainer/Dev.Dockerfile
     environment:
       HTTP_PROXY: http://proxy:3128
       HTTPS_PROXY: http://proxy:3128
@@ -101,6 +101,7 @@ services:
           sleep inf
     networks:
       - internal
+      - home-assistant
     volumes:
       - claude-persistence:/home/harr/.claude
       - type: volume
@@ -118,7 +119,7 @@ services:
   # Home Assistant mounting configuration and the integration source
   # for direct testing of the integration
   home-assistant:
-    image: homeassistant/home-assistant:beta
+    image: homeassistant/home-assistant:2026.3.1
     container_name: home-assistant
     volumes:
       - homeassistant:/config
@@ -127,12 +128,17 @@ services:
       - ../custom_components/harr:/config/custom_components/harr:ro
     ports:
       - 127.0.0.1:8123:8123
+    networks:
+      - external
+      - home-assistant
 
 networks:
   internal:
     internal: true
   external:
     driver: bridge
+  home-assistant:
+    internal: true
 
 volumes:
   mitm-ca:

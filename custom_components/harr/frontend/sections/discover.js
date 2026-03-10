@@ -366,14 +366,17 @@ class HarrDiscover extends BaseSection {
             return `<div class="cast-member">
               <div class="cast-avatar">
                 ${imgUrl
-                  ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.parentNode.textContent='${initials}'">`
-                  : initials}
+                  ? `<img src="${imgUrl}" alt="" loading="lazy" data-initials="${_esc(initials)}">`
+                  : _esc(initials)}
               </div>
               <div class="cast-name">${_esc(m.name || "")}</div>
               ${m.character ? `<div class="cast-char">${_esc(m.character)}</div>` : ""}
             </div>`;
           }).join("")}
         </div></div>`;
+      section.querySelectorAll("img[data-initials]").forEach(img => {
+        img.addEventListener("error", () => { img.parentNode.textContent = img.dataset.initials; });
+      });
     } catch { /* silently omit cast on error */ }
   }
 }
