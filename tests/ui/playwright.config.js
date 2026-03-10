@@ -11,6 +11,7 @@ module.exports = defineConfig({
   testMatch: "**/*.spec.js",
   timeout: 30_000,
   retries: 1,
+  reporter: [["list"], ["html"]],
   // Log in once before all tests; auth state is saved to .auth.json
   globalSetup: "./global-setup.js",
   use: {

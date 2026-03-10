@@ -90,6 +90,15 @@ module.exports = async function globalSetup() {
     timeout: 15_000,
   });
 
+  // Wait until HA has stored auth tokens in localStorage before capturing state.
+  await page.waitForFunction(
+    () => {
+      const t = localStorage.getItem("hassTokens");
+      return t !== null && t !== "null";
+    },
+    { timeout: 15_000 }
+  );
+
   await context.storageState({ path: ".auth.json" });
   await browser.close();
 };
