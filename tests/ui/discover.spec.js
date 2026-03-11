@@ -18,8 +18,12 @@ async function isDiscoverTabVisible(page) {
 async function navigateToDiscover(page) {
   await page.evaluate(() => {
     const tabs = window.__haHarr?.shadowRoot?.querySelectorAll(".tab");
-    const first = tabs?.[0];
-    if (first) first.click();
+    for (const tab of tabs || []) {
+      if (tab.textContent?.toLowerCase().includes("discover")) {
+        tab.click();
+        break;
+      }
+    }
   });
   await page.waitForTimeout(500);
 }
