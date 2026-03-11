@@ -377,6 +377,9 @@ class HarrDiscover extends BaseSection {
       section.querySelectorAll("img[data-initials]").forEach(img => {
         img.addEventListener("error", () => { img.parentNode.textContent = img.dataset.initials; });
       });
+      const castScroll    = section.querySelector(".cast-scroll");
+      const castContainer = section.querySelector(".cast-container");
+      if (castScroll && castContainer) this._initScrollShadows(castScroll, castContainer);
     } catch { /* silently omit cast on error */ }
   }
 }

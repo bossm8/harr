@@ -39,6 +39,8 @@ _LOGGER = logging.getLogger(__name__)
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 FRONTEND_URL = "/harr-frontend"
 PANEL_URL = "/harr-frontend/harr-panel.js"
+BRAND_DIR = os.path.join(os.path.dirname(__file__), "brand")
+BRAND_URL = "/harr-brand"
 
 # Key used to track whether static paths and views have been registered for this
 # HA process lifetime. These have no removal API and must only be registered once.
@@ -152,9 +154,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Static paths and views: register once per process lifetime (no removal API)
     if not hass.data.get(_HTTP_REGISTERED_KEY):
-        await hass.http.async_register_static_paths(
-            [StaticPathConfig(FRONTEND_URL, FRONTEND_DIR, cache_headers=False)]
-        )
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(FRONTEND_URL, FRONTEND_DIR, cache_headers=False),
+            StaticPathConfig(BRAND_URL, BRAND_DIR, cache_headers=False),
+        ])
 
         for view_class in [
             RadarrProxyView,

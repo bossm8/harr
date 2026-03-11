@@ -283,15 +283,27 @@ export const SECTION_STYLES = `
   .cast-container {
     position: relative;
   }
+  .cast-container::before,
   .cast-container::after {
     content: "";
     position: absolute;
-    top: 0; right: 0; bottom: 10px;
+    top: 0; bottom: 10px;
     width: 48px;
-    background: linear-gradient(to right, transparent, var(--harr-card-bg, #1c1c1c));
     pointer-events: none;
     z-index: 1;
+    opacity: 0;
+    transition: opacity 0.2s;
   }
+  .cast-container::before {
+    left: 0;
+    background: linear-gradient(to right, var(--harr-card-bg, #1c1c1c), transparent);
+  }
+  .cast-container::after {
+    right: 0;
+    background: linear-gradient(to left, var(--harr-card-bg, #1c1c1c), transparent);
+  }
+  .cast-container.shadow-left::before  { opacity: 1; }
+  .cast-container.shadow-right::after  { opacity: 1; }
 
   .cast-scroll {
     display: flex;
@@ -611,6 +623,18 @@ export class BaseSection extends HTMLElement {
   /** Render an error message into the given container element. */
   _renderError(container, msg) {
     container.innerHTML = `<div class="error-msg">⚠️ ${_esc(msg)}</div>`;
+  }
+
+  /** Wire up dynamic left/right scroll-edge shadows on a container. */
+  _initScrollShadows(scrollEl, containerEl) {
+    const update = () => {
+      const atStart = scrollEl.scrollLeft <= 1;
+      const atEnd   = scrollEl.scrollLeft + scrollEl.clientWidth >= scrollEl.scrollWidth - 1;
+      containerEl.classList.toggle("shadow-left",  !atStart);
+      containerEl.classList.toggle("shadow-right", !atEnd);
+    };
+    scrollEl.addEventListener("scroll", update, { passive: true });
+    requestAnimationFrame(() => requestAnimationFrame(update));
   }
 
   /** Show a toast notification in the shadow root. */

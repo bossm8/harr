@@ -3,6 +3,7 @@
  * Main panel web component: <ha-harr>
  */
 
+import "./sections/home.js";
 import "./sections/discover.js";
 import "./sections/movies.js";
 import "./sections/shows.js";
@@ -13,6 +14,7 @@ import { getHarrConfig } from "./sections/_base-section.js";
 import { SONARR, RADARR, SEERR } from "./components/icons.js";
 
 const TABS = [
+  { id: "home",      label: "Home",       icon: `<img src="/harr-brand/icon.png" alt="Harr">` },
   { id: "discover",  label: "Discover",   icon: "🔥" },
   { id: "movies",    label: "Movies",     icon: RADARR },
   { id: "shows",     label: "Shows",      icon: SONARR },
@@ -23,6 +25,7 @@ const TABS = [
 
 // Maps each tab to the services it requires (tab shown if ANY is configured)
 const TAB_SERVICES = {
+  home:      ["radarr", "sonarr"],
   discover:  ["seerr"],
   movies:    ["radarr"],
   shows:     ["sonarr"],
@@ -98,6 +101,13 @@ const STYLES = `
   .tab-icon--svg svg {
     width: 1em !important;
     height: 1em !important;
+    display: block;
+  }
+
+  .tab-icon--img img {
+    width: 1em;
+    height: 1em;
+    object-fit: contain;
     display: block;
   }
 
@@ -195,7 +205,7 @@ class HaHarr extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this._activeTab = "discover";
+    this._activeTab = "home";
   }
 
   set hass(hass) {
@@ -254,7 +264,9 @@ class HaHarr extends HTMLElement {
       btn.className = `tab${tab.id === this._activeTab ? " active" : ""}`;
       btn.dataset.tab = tab.id;
       const isSvg = /^\s*<svg[\s>]/i.test(tab.icon);
-      btn.innerHTML = `<span class="tab-icon ${isSvg ? "tab-icon--svg" : "tab-icon--emoji"}">${tab.icon}</span><span>${tab.label}</span>`;
+      const isImg = /^\s*<img[\s>]/i.test(tab.icon);
+      const iconClass = isSvg ? "tab-icon--svg" : isImg ? "tab-icon--img" : "tab-icon--emoji";
+      btn.innerHTML = `<span class="tab-icon ${iconClass}">${tab.icon}</span><span>${tab.label}</span>`;
       btn.addEventListener("click", () => this._switchTab(tab.id));
       tabBar.appendChild(btn);
     }
