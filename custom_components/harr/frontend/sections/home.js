@@ -216,7 +216,7 @@ class HarrHome extends BaseSection {
     let movies = [];
     if (moviesResult.status === "fulfilled") {
       movies = (moviesResult.value || [])
-        .filter(m => m.digitalRelease)
+        .filter(m => m.digitalRelease && m.digitalRelease.slice(0, 10) >= start && m.digitalRelease.slice(0, 10) <= end)
         .sort((a, b) => a.digitalRelease.localeCompare(b.digitalRelease));
     }
 
