@@ -21,8 +21,7 @@ harr:
 
   qbittorrent:
     url: !secret qbt_url
-    username: !secret qbt_username
-    password: !secret qbt_password
+    api_key: !secret qbt_api_key
     verify_ssl: false
 
   sabnzbd:

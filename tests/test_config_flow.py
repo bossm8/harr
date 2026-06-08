@@ -18,9 +18,8 @@ from custom_components.harr.const import (
     CONF_ADMIN_ONLY,
     CONF_IMAGE_ALLOWED_HOSTS,
     CONF_IMAGE_CACHE_DISK,
-    CONF_QBT_PASSWORD,
+    CONF_QBT_API_KEY,
     CONF_QBT_URL,
-    CONF_QBT_USERNAME,
     CONF_QBT_VERIFY_SSL,
     CONF_RADARR_API_KEY,
     CONF_RADARR_URL,
@@ -50,7 +49,7 @@ class TestFlattenSections:
         result = _flatten_sections({})
         # All string keys should default to "" if absent
         assert result[CONF_RADARR_URL] == ""
-        assert result[CONF_QBT_PASSWORD] == ""
+        assert result[CONF_QBT_API_KEY] == ""
         assert result[CONF_IMAGE_ALLOWED_HOSTS] == ""
 
     def test_top_level_non_dict_preserved(self):
@@ -129,26 +128,40 @@ class TestTestQbt:
         mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
         mock_resp.__aexit__ = AsyncMock(return_value=False)
         mock_resp.ok = True
-        mock_resp.text = AsyncMock(return_value="Ok.")
+        mock_resp.status = 200
 
         session = MagicMock()
-        session.post = MagicMock(return_value=mock_resp)
+        session.get = MagicMock(return_value=mock_resp)
 
-        result = await _test_qbt(session, "http://qbt", "admin", "password")
+        result = await _test_qbt(session, "http://qbt", "qbt_validtoken1234567890123456")
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_fails_returns_invalid_auth(self):
+    async def test_unauthorized_returns_invalid_auth(self):
         mock_resp = AsyncMock()
         mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
         mock_resp.__aexit__ = AsyncMock(return_value=False)
-        mock_resp.ok = True
-        mock_resp.text = AsyncMock(return_value="Fails.")
+        mock_resp.ok = False
+        mock_resp.status = 401
 
         session = MagicMock()
-        session.post = MagicMock(return_value=mock_resp)
+        session.get = MagicMock(return_value=mock_resp)
 
-        result = await _test_qbt(session, "http://qbt", "admin", "wrongpass")
+        result = await _test_qbt(session, "http://qbt", "qbt_wrongtoken")
+        assert result == "invalid_auth"
+
+    @pytest.mark.asyncio
+    async def test_forbidden_returns_invalid_auth(self):
+        mock_resp = AsyncMock()
+        mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+        mock_resp.__aexit__ = AsyncMock(return_value=False)
+        mock_resp.ok = False
+        mock_resp.status = 403
+
+        session = MagicMock()
+        session.get = MagicMock(return_value=mock_resp)
+
+        result = await _test_qbt(session, "http://qbt", "qbt_wrongtoken")
         assert result == "invalid_auth"
 
     @pytest.mark.asyncio
@@ -157,20 +170,20 @@ class TestTestQbt:
         mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
         mock_resp.__aexit__ = AsyncMock(return_value=False)
         mock_resp.ok = False
-        mock_resp.text = AsyncMock(return_value="")
+        mock_resp.status = 500
 
         session = MagicMock()
-        session.post = MagicMock(return_value=mock_resp)
+        session.get = MagicMock(return_value=mock_resp)
 
-        result = await _test_qbt(session, "http://qbt", "admin", "pass")
+        result = await _test_qbt(session, "http://qbt", "qbt_token")
         assert result == "cannot_connect"
 
     @pytest.mark.asyncio
     async def test_client_error_returns_cannot_connect(self):
         session = MagicMock()
-        session.post = MagicMock(side_effect=aiohttp.ClientError("refused"))
+        session.get = MagicMock(side_effect=aiohttp.ClientError("refused"))
 
-        result = await _test_qbt(session, "http://qbt", "admin", "pass")
+        result = await _test_qbt(session, "http://qbt", "qbt_token")
         assert result == "cannot_connect"
 
 
@@ -217,8 +230,7 @@ class TestValidateInput:
         data = {
             **base_config_data,
             CONF_QBT_URL: "http://qbt",
-            CONF_QBT_USERNAME: "admin",
-            CONF_QBT_PASSWORD: "pass",
+            CONF_QBT_API_KEY: "qbt_validtoken1234567890123456",
         }
 
         with patch("custom_components.harr.config_flow._make_session") as mock_make:

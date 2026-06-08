@@ -24,17 +24,13 @@ CONF_BAZARR_VERIFY_SSL = "bazarr_verify_ssl"
 
 # qBittorrent
 CONF_QBT_URL = "qbt_url"
-CONF_QBT_USERNAME = "qbt_username"
-CONF_QBT_PASSWORD = "qbt_password"
+CONF_QBT_API_KEY = "qbt_api_key"
 CONF_QBT_VERIFY_SSL = "qbt_verify_ssl"
 
 # SABnzbd
 CONF_SABNZBD_URL = "sabnzbd_url"
 CONF_SABNZBD_API_KEY = "sabnzbd_api_key"
 CONF_SABNZBD_VERIFY_SSL = "sabnzbd_verify_ssl"
-
-# Runtime data keys
-DATA_QBT_COOKIE = "qbt_cookie"
 
 # Access control
 CONF_ADMIN_ONLY = "admin_only"

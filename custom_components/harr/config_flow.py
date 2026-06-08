@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
+from homeassistant.helpers import selector
 
 from .const import (
     CONF_ADMIN_ONLY,
@@ -22,9 +23,8 @@ from .const import (
     CONF_SEERR_API_KEY,
     CONF_SEERR_URL,
     CONF_SEERR_VERIFY_SSL,
-    CONF_QBT_PASSWORD,
+    CONF_QBT_API_KEY,
     CONF_QBT_URL,
-    CONF_QBT_USERNAME,
     CONF_QBT_VERIFY_SSL,
     CONF_RADARR_API_KEY,
     CONF_RADARR_URL,
@@ -48,7 +48,7 @@ _ALL_STRING_KEYS = (
     CONF_SONARR_URL, CONF_SONARR_API_KEY,
     CONF_SEERR_URL, CONF_SEERR_API_KEY,
     CONF_BAZARR_URL, CONF_BAZARR_API_KEY,
-    CONF_QBT_URL, CONF_QBT_USERNAME, CONF_QBT_PASSWORD,
+    CONF_QBT_URL, CONF_QBT_API_KEY,
     CONF_SABNZBD_URL, CONF_SABNZBD_API_KEY,
     CONF_IMAGE_ALLOWED_HOSTS,
 )
@@ -74,7 +74,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("radarr"): section(
             vol.Schema({
                 vol.Optional(CONF_RADARR_URL, default=""): str,
-                vol.Optional(CONF_RADARR_API_KEY, default=""): str,
+                vol.Optional(CONF_RADARR_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                 vol.Optional(CONF_RADARR_VERIFY_SSL, default=True): bool,
             }),
             {"collapsed": False},
@@ -82,7 +82,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("sonarr"): section(
             vol.Schema({
                 vol.Optional(CONF_SONARR_URL, default=""): str,
-                vol.Optional(CONF_SONARR_API_KEY, default=""): str,
+                vol.Optional(CONF_SONARR_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                 vol.Optional(CONF_SONARR_VERIFY_SSL, default=True): bool,
             }),
             {"collapsed": False},
@@ -90,7 +90,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("seerr"): section(
             vol.Schema({
                 vol.Optional(CONF_SEERR_URL, default=""): str,
-                vol.Optional(CONF_SEERR_API_KEY, default=""): str,
+                vol.Optional(CONF_SEERR_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                 vol.Optional(CONF_SEERR_VERIFY_SSL, default=True): bool,
             }),
             {"collapsed": False},
@@ -98,7 +98,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("bazarr"): section(
             vol.Schema({
                 vol.Optional(CONF_BAZARR_URL, default=""): str,
-                vol.Optional(CONF_BAZARR_API_KEY, default=""): str,
+                vol.Optional(CONF_BAZARR_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                 vol.Optional(CONF_BAZARR_VERIFY_SSL, default=True): bool,
             }),
             {"collapsed": False},
@@ -106,8 +106,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("qbittorrent"): section(
             vol.Schema({
                 vol.Optional(CONF_QBT_URL, default=""): str,
-                vol.Optional(CONF_QBT_USERNAME, default=""): str,
-                vol.Optional(CONF_QBT_PASSWORD, default=""): str,
+                vol.Optional(CONF_QBT_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                 vol.Optional(CONF_QBT_VERIFY_SSL, default=True): bool,
             }),
             {"collapsed": False},
@@ -115,7 +114,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("sabnzbd"): section(
             vol.Schema({
                 vol.Optional(CONF_SABNZBD_URL, default=""): str,
-                vol.Optional(CONF_SABNZBD_API_KEY, default=""): str,
+                vol.Optional(CONF_SABNZBD_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                 vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=True): bool,
             }),
             {"collapsed": False},
@@ -160,19 +159,17 @@ async def _test_api_key_service(
 async def _test_qbt(
     session: aiohttp.ClientSession,
     base_url: str,
-    username: str,
-    password: str,
+    api_key: str,
 ) -> str | None:
-    """Test qBittorrent connection. Returns error key or None."""
-    url = f"{base_url.rstrip('/')}/api/v2/auth/login"
+    """Test qBittorrent connection using API token. Returns error key or None."""
+    url = f"{base_url.rstrip('/')}/api/v2/app/version"
     try:
-        async with session.post(
+        async with session.get(
             url,
-            data={"username": username, "password": password},
+            headers={"Authorization": f"Bearer {api_key}"},
             timeout=aiohttp.ClientTimeout(total=10),
         ) as resp:
-            body = await resp.text()
-            if body.strip() == "Fails.":
+            if resp.status in (401, 403):
                 return "invalid_auth"
             if not resp.ok:
                 return "cannot_connect"
@@ -238,7 +235,7 @@ async def _validate_input(data: dict) -> dict:
     if data.get(CONF_QBT_URL):
         _LOGGER.debug("Testing qBittorrent connection: %s", data[CONF_QBT_URL])
         async with _make_session(data.get(CONF_QBT_VERIFY_SSL, True)) as session:
-            err = await _test_qbt(session, data[CONF_QBT_URL], data.get(CONF_QBT_USERNAME, ""), data.get(CONF_QBT_PASSWORD, ""))
+            err = await _test_qbt(session, data[CONF_QBT_URL], data.get(CONF_QBT_API_KEY, ""))
             if err:
                 _LOGGER.debug("qBittorrent connection test failed: %s", err)
                 errors["qbittorrent"] = err
@@ -338,7 +335,7 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("radarr"): section(
                     vol.Schema({
                         vol.Optional(CONF_RADARR_URL, description=_sv(current.get(CONF_RADARR_URL, ""))): str,
-                        vol.Optional(CONF_RADARR_API_KEY, description=_sv(current.get(CONF_RADARR_API_KEY, ""))): str,
+                        vol.Optional(CONF_RADARR_API_KEY, description=_sv(current.get(CONF_RADARR_API_KEY, ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                         vol.Optional(CONF_RADARR_VERIFY_SSL, default=current.get(CONF_RADARR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
@@ -346,7 +343,7 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("sonarr"): section(
                     vol.Schema({
                         vol.Optional(CONF_SONARR_URL, description=_sv(current.get(CONF_SONARR_URL, ""))): str,
-                        vol.Optional(CONF_SONARR_API_KEY, description=_sv(current.get(CONF_SONARR_API_KEY, ""))): str,
+                        vol.Optional(CONF_SONARR_API_KEY, description=_sv(current.get(CONF_SONARR_API_KEY, ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                         vol.Optional(CONF_SONARR_VERIFY_SSL, default=current.get(CONF_SONARR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
@@ -354,7 +351,7 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("seerr"): section(
                     vol.Schema({
                         vol.Optional(CONF_SEERR_URL, description=_sv(current.get(CONF_SEERR_URL, ""))): str,
-                        vol.Optional(CONF_SEERR_API_KEY, description=_sv(current.get(CONF_SEERR_API_KEY, ""))): str,
+                        vol.Optional(CONF_SEERR_API_KEY, description=_sv(current.get(CONF_SEERR_API_KEY, ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                         vol.Optional(CONF_SEERR_VERIFY_SSL, default=current.get(CONF_SEERR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
@@ -362,7 +359,7 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("bazarr"): section(
                     vol.Schema({
                         vol.Optional(CONF_BAZARR_URL, description=_sv(current.get(CONF_BAZARR_URL, ""))): str,
-                        vol.Optional(CONF_BAZARR_API_KEY, description=_sv(current.get(CONF_BAZARR_API_KEY, ""))): str,
+                        vol.Optional(CONF_BAZARR_API_KEY, description=_sv(current.get(CONF_BAZARR_API_KEY, ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                         vol.Optional(CONF_BAZARR_VERIFY_SSL, default=current.get(CONF_BAZARR_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
@@ -370,8 +367,7 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("qbittorrent"): section(
                     vol.Schema({
                         vol.Optional(CONF_QBT_URL, description=_sv(current.get(CONF_QBT_URL, ""))): str,
-                        vol.Optional(CONF_QBT_USERNAME, description=_sv(current.get(CONF_QBT_USERNAME, ""))): str,
-                        vol.Optional(CONF_QBT_PASSWORD, description=_sv(current.get(CONF_QBT_PASSWORD, ""))): str,
+                        vol.Optional(CONF_QBT_API_KEY, description=_sv(current.get(CONF_QBT_API_KEY, ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                         vol.Optional(CONF_QBT_VERIFY_SSL, default=current.get(CONF_QBT_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},
@@ -379,7 +375,7 @@ class HarrOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("sabnzbd"): section(
                     vol.Schema({
                         vol.Optional(CONF_SABNZBD_URL, description=_sv(current.get(CONF_SABNZBD_URL, ""))): str,
-                        vol.Optional(CONF_SABNZBD_API_KEY, description=_sv(current.get(CONF_SABNZBD_API_KEY, ""))): str,
+                        vol.Optional(CONF_SABNZBD_API_KEY, description=_sv(current.get(CONF_SABNZBD_API_KEY, ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)),
                         vol.Optional(CONF_SABNZBD_VERIFY_SSL, default=current.get(CONF_SABNZBD_VERIFY_SSL, True)): bool,
                     }),
                     {"collapsed": False},

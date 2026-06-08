@@ -53,12 +53,12 @@
             "name": "qBittorrent",
             "data": {
               "qbt_url": "qBittorrent URL",
-              "qbt_username": "Username",
-              "qbt_password": "Password",
+              "qbt_api_key": "API Key",
               "qbt_verify_ssl": "Verify SSL certificate"
             },
             "data_description": {
-              "qbt_url": "e.g. http://192.168.1.10:8080"
+              "qbt_url": "e.g. http://192.168.1.10:8080",
+              "qbt_api_key": "Generate in qBittorrent → Tools → Options → Web UI → API Token (requires v5.2.0+)"
             }
           },
           "sabnzbd": {
@@ -157,12 +157,12 @@
             "name": "qBittorrent",
             "data": {
               "qbt_url": "qBittorrent URL",
-              "qbt_username": "Username",
-              "qbt_password": "Password",
+              "qbt_api_key": "API Key",
               "qbt_verify_ssl": "Verify SSL certificate"
             },
             "data_description": {
-              "qbt_url": "e.g. http://192.168.1.10:8080"
+              "qbt_url": "e.g. http://192.168.1.10:8080",
+              "qbt_api_key": "Generate in qBittorrent → Tools → Options → Web UI → API Token (requires v5.2.0+)"
             }
           },
           "sabnzbd": {
