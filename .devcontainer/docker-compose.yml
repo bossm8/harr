@@ -119,7 +119,7 @@ services:
   # Home Assistant mounting configuration and the integration source
   # for direct testing of the integration
   home-assistant:
-    image: homeassistant/home-assistant:2026.3.1
+    image: homeassistant/home-assistant:2026.6.1
     container_name: home-assistant
     volumes:
       - homeassistant:/config

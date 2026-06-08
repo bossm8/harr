@@ -8,11 +8,9 @@ import pytest
 
 from custom_components.harr.const import (
     CONF_ADMIN_ONLY,
-    CONF_QBT_PASSWORD,
+    CONF_QBT_API_KEY,
     CONF_QBT_URL,
-    CONF_QBT_USERNAME,
     CONF_QBT_VERIFY_SSL,
-    DATA_QBT_COOKIE,
     DOMAIN,
 )
 from custom_components.harr.views.qbittorrent import QBittorrentProxyView
@@ -36,35 +34,13 @@ def _make_request(hass, query=None, content_type="application/json", user=None):
     return request
 
 
-def _qbt_config(sid=None):
-    cfg = {
+def _qbt_config(token="qbt_testtoken123456789012345678"):
+    return {
         CONF_QBT_URL: "http://qbt",
-        CONF_QBT_USERNAME: "admin",
-        CONF_QBT_PASSWORD: "password",
+        CONF_QBT_API_KEY: token,
         CONF_QBT_VERIFY_SSL: True,
         CONF_ADMIN_ONLY: False,
     }
-    if sid:
-        cfg[DATA_QBT_COOKIE] = sid
-    return cfg
-
-
-def _login_response(body="Ok.", sid="SID123", ok=True):
-    """Create mock login POST response."""
-    mock_sid = MagicMock()
-    mock_sid.value = sid
-
-    resp = AsyncMock()
-    resp.ok = ok
-    resp.text = AsyncMock(return_value=body)
-    resp.cookies = {
-        "SID": mock_sid,
-    } if sid else {}
-
-    cm = AsyncMock()
-    cm.__aenter__ = AsyncMock(return_value=resp)
-    cm.__aexit__ = AsyncMock(return_value=False)
-    return cm
 
 
 def _proxy_response(status=200, body=b'{"result":[]}', content_type="application/json"):
@@ -78,59 +54,6 @@ def _proxy_response(status=200, body=b'{"result":[]}', content_type="application
     return cm
 
 
-class TestQBittorrentGetCookie:
-    @pytest.mark.asyncio
-    async def test_successful_login_returns_sid(self):
-        config = _qbt_config()
-        hass = _make_hass(config)
-
-        mock_session = MagicMock()
-        mock_session.post = MagicMock(return_value=_login_response("Ok.", "NEWSID"))
-
-        view = QBittorrentProxyView()
-        with patch(
-            "custom_components.harr.views.qbittorrent.async_get_clientsession",
-            return_value=mock_session,
-        ):
-            sid = await view._get_cookie(hass, config)
-
-        assert sid == "NEWSID"
-
-    @pytest.mark.asyncio
-    async def test_failed_login_returns_none(self):
-        config = _qbt_config()
-        hass = _make_hass(config)
-
-        mock_session = MagicMock()
-        mock_session.post = MagicMock(return_value=_login_response("Fails.", sid=None))
-
-        view = QBittorrentProxyView()
-        with patch(
-            "custom_components.harr.views.qbittorrent.async_get_clientsession",
-            return_value=mock_session,
-        ):
-            sid = await view._get_cookie(hass, config)
-
-        assert sid is None
-
-    @pytest.mark.asyncio
-    async def test_client_error_returns_none(self):
-        config = _qbt_config()
-        hass = _make_hass(config)
-
-        mock_session = MagicMock()
-        mock_session.post = MagicMock(side_effect=aiohttp.ClientError("refused"))
-
-        view = QBittorrentProxyView()
-        with patch(
-            "custom_components.harr.views.qbittorrent.async_get_clientsession",
-            return_value=mock_session,
-        ):
-            sid = await view._get_cookie(hass, config)
-
-        assert sid is None
-
-
 class TestQBittorrentProxy:
     @pytest.mark.asyncio
     async def test_not_configured_returns_503(self):
@@ -142,12 +65,11 @@ class TestQBittorrentProxy:
         assert response.status == 503
 
     @pytest.mark.asyncio
-    async def test_cached_sid_used_for_request(self):
-        hass = _make_hass(_qbt_config(sid="CACHED_SID"))
+    async def test_token_injected_in_request(self):
+        hass = _make_hass(_qbt_config(token="qbt_mytoken"))
         request = _make_request(hass)
 
         proxy_cm = _proxy_response(200)
-
         mock_session_instance = MagicMock()
         mock_session_instance.__aenter__ = AsyncMock(return_value=mock_session_instance)
         mock_session_instance.__aexit__ = AsyncMock(return_value=False)
@@ -155,87 +77,37 @@ class TestQBittorrentProxy:
 
         view = QBittorrentProxyView()
         with patch("aiohttp.ClientSession", return_value=mock_session_instance):
-            with patch("aiohttp.CookieJar") as mock_jar_cls:
-                mock_jar = MagicMock()
-                mock_jar_cls.return_value = mock_jar
-                response = await view._proxy(request, "api/v2/torrents/info", "GET")
+            response = await view._proxy(request, "api/v2/torrents/info", "GET")
 
         assert response.status == 200
-        mock_jar.update_cookies.assert_called_with({"SID": "CACHED_SID"})
+        call_kwargs = mock_session_instance.request.call_args
+        headers = call_kwargs[1]["headers"]
+        assert headers.get("Authorization") == "Bearer qbt_mytoken"
 
     @pytest.mark.asyncio
-    async def test_no_sid_fetches_new_cookie(self):
-        hass = _make_hass(_qbt_config())  # no cached SID
+    async def test_no_token_proxies_without_auth_header(self):
+        hass = _make_hass(_qbt_config(token=""))
         request = _make_request(hass)
 
-        proxy_cm = _proxy_response(200)
+        proxy_cm = _proxy_response(401)
         mock_session_instance = MagicMock()
         mock_session_instance.__aenter__ = AsyncMock(return_value=mock_session_instance)
         mock_session_instance.__aexit__ = AsyncMock(return_value=False)
         mock_session_instance.request = MagicMock(return_value=proxy_cm)
 
         view = QBittorrentProxyView()
-        with patch.object(view, "_get_cookie", return_value="NEW_SID") as mock_get:
-            with patch("aiohttp.ClientSession", return_value=mock_session_instance):
-                with patch("aiohttp.CookieJar"):
-                    response = await view._proxy(request, "test", "GET")
+        with patch("aiohttp.ClientSession", return_value=mock_session_instance):
+            response = await view._proxy(request, "api/v2/torrents/info", "GET")
 
-        mock_get.assert_called_once()
-        assert hass.data[DOMAIN][DATA_QBT_COOKIE] == "NEW_SID"
-        assert response.status == 200
-
-    @pytest.mark.asyncio
-    async def test_auth_failure_returns_401(self):
-        hass = _make_hass(_qbt_config())
-        request = _make_request(hass)
-
-        view = QBittorrentProxyView()
-        with patch.object(view, "_get_cookie", return_value=None):
-            response = await view._proxy(request, "test", "GET")
-
+        call_kwargs = mock_session_instance.request.call_args
+        headers = call_kwargs[1]["headers"]
+        assert "Authorization" not in headers
+        # qBittorrent upstream responds with 401 — proxy passes it through
         assert response.status == 401
 
     @pytest.mark.asyncio
-    async def test_403_triggers_reauth_and_retry(self):
-        hass = _make_hass(_qbt_config(sid="OLD_SID"))
-        request = _make_request(hass)
-
-        # First call returns 403, second call returns 200
-        call_count = 0
-        responses = [_proxy_response(403), _proxy_response(200)]
-
-        async def proxy_side_effect(req, path, method, body=None, retry=True):
-            nonlocal call_count
-            result = responses[call_count]
-            call_count += 1
-            if call_count == 1 and retry:
-                # Simulate the real re-auth behavior
-                hass.data[DOMAIN].pop(DATA_QBT_COOKIE, None)
-                return await proxy_side_effect(req, path, method, body, retry=False)
-            return MagicMock(status=200)
-
-        view = QBittorrentProxyView()
-        with patch.object(view, "_get_cookie", return_value="NEW_SID") as mock_get_cookie:
-            proxy_cm_403 = _proxy_response(403)
-
-            mock_session_instance = MagicMock()
-            mock_session_instance.__aenter__ = AsyncMock(return_value=mock_session_instance)
-            mock_session_instance.__aexit__ = AsyncMock(return_value=False)
-            # Both the initial and retry requests go through the same mock session
-            mock_session_instance.request = MagicMock(return_value=proxy_cm_403)
-
-            with patch("aiohttp.ClientSession", return_value=mock_session_instance):
-                with patch("aiohttp.CookieJar"):
-                    await view._proxy(request, "test", "GET", retry=True)
-
-        # Re-authentication was triggered: _get_cookie was called to get a new SID
-        mock_get_cookie.assert_called_once()
-        # The new SID was stored after re-auth
-        assert hass.data[DOMAIN][DATA_QBT_COOKIE] == "NEW_SID"
-
-    @pytest.mark.asyncio
     async def test_connector_error_returns_502(self):
-        hass = _make_hass(_qbt_config(sid="SID"))
+        hass = _make_hass(_qbt_config())
         request = _make_request(hass)
 
         mock_session_instance = MagicMock()
@@ -247,8 +119,25 @@ class TestQBittorrentProxy:
 
         view = QBittorrentProxyView()
         with patch("aiohttp.ClientSession", return_value=mock_session_instance):
-            with patch("aiohttp.CookieJar"):
-                response = await view._proxy(request, "test", "GET")
+            response = await view._proxy(request, "test", "GET")
+
+        assert response.status == 502
+
+    @pytest.mark.asyncio
+    async def test_client_error_returns_502(self):
+        hass = _make_hass(_qbt_config())
+        request = _make_request(hass)
+
+        mock_session_instance = MagicMock()
+        mock_session_instance.__aenter__ = AsyncMock(return_value=mock_session_instance)
+        mock_session_instance.__aexit__ = AsyncMock(return_value=False)
+        mock_session_instance.request = MagicMock(
+            side_effect=aiohttp.ClientError("generic error")
+        )
+
+        view = QBittorrentProxyView()
+        with patch("aiohttp.ClientSession", return_value=mock_session_instance):
+            response = await view._proxy(request, "test", "GET")
 
         assert response.status == 502
 
